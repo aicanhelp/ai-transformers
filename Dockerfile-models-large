@@ -1,4 +1,5 @@
 FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-large:latest
+#Why not pull all docker files into a folder? Because the building in Aliyun has some problem.
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \

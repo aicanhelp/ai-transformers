@@ -1,21 +1,23 @@
 FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-small:latest
+#Why not pull all docker files into a folder? Because the building in Aliyun has some problem.
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \
       version="1.0.0"
 
-WORKDIR /app/transformersx
+WORKDIR /app
 
 RUN rm -rf *
 
 # Copy as early as possible so we can cache ...
-COPY requirements.txt .
+COPY . transformersx
 
 RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
 RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --task-name download_models --task-size base
+
 
 
 

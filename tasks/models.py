@@ -58,11 +58,15 @@ other_models = []
 
 all_models = distil_models + tiny_models + small_models + base_models + large_models + other_models
 
+
 class Downloader():
     def __init__(self, config: TasksConfiguration):
         self._config = config
         model_size = config.model_size
-        self.models = eval(model_size + '_models')
+        model_size = model_size.split(',')
+        self.models = []
+        for size in model_size:
+            self.models = self.models + eval(size + '_models')
 
     def __call__(self, *args, **kwargs):
         QueueExecutor(self.models, worker_num=8).run(self._download_model)
@@ -70,10 +74,10 @@ class Downloader():
     def _download_model(self, model_names):
         for model_name in model_names:
             log.info('Initial model of ' + model_name)
-            # cache_dir = join_path(self._config.cache_dir, model_name)
-            # AutoConfig.from_pretrained(model_name, cache_dir=cache_dir)
-            # AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-            # AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
+            cache_dir = join_path(self._config.cache_dir, model_name)
+            AutoConfig.from_pretrained(model_name, cache_dir=cache_dir)
+            AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+            AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
 
 
 def download_models(config: TasksConfiguration):
