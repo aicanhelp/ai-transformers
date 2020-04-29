@@ -70,10 +70,10 @@ class Downloader():
     def _download_model(self, model_names):
         for model_name in model_names:
             log.info('Initial model of ' + model_name)
-            cache_dir = join_path(self._config.cache_dir, model_name)
-            AutoConfig.from_pretrained(model_name, cache_dir=cache_dir)
-            AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-            AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
+            # cache_dir = join_path(self._config.cache_dir, model_name)
+            # AutoConfig.from_pretrained(model_name, cache_dir=cache_dir)
+            # AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+            # AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
 
 
 def download_models(config: TasksConfiguration):
