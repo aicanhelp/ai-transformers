@@ -1,0 +1,1 @@
+This directory is for the log file.
