@@ -1,4 +1,4 @@
-FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx:latest
+FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-new:latest
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \
