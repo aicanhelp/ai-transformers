@@ -54,6 +54,9 @@ large_models = [
     'hfl/chinese-roberta-wwm-ext-large'
 ]
 
+other_models = []
+
+all_models = distil_models + tiny_models + small_models + base_models + large_models + other_models
 
 class Downloader():
     def __init__(self, config: TasksConfiguration):

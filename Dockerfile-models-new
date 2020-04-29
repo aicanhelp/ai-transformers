@@ -1,17 +1,10 @@
-FROM registry.cn-beijing.aliyuncs.com/aimogo/transformers:latest
+FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx:latest
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \
       version="1.0.0"
 
-RUN apt-get clean && apt-get update --fix-missing
-RUN apt-get install -y --fix-missing --no-install-recommends \
-  build-essential && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-  mkdir /app
-
-WORKDIR /app
+WORKDIR /app/transformersx
 
 RUN rm -rf *
 
@@ -22,7 +15,7 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
-RUN python down_tasks.py --task_name distil
+RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --task-name download_models --task-size small
 
 VOLUME ["/app"]
 
