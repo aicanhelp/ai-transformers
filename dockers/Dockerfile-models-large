@@ -1,4 +1,4 @@
-FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-new:latest
+FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-large:latest
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \
@@ -15,6 +15,6 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
-RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --task-name download_models --task-size all
+RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --task-name download_models --task-size large
 
 
