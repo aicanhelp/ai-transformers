@@ -20,7 +20,7 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
-RUN python down_tasks.py --task_name distil
+RUN rm -rf log && mkdir log && python down_tasks.py --task_name distil
 
 VOLUME ["/app"]
 
