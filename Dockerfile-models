@@ -12,4 +12,11 @@ RUN apt-get install -y --fix-missing --no-install-recommends \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
   mkdir -p /app/transformersx && mkdir /app/models
 
+WORKDIR /app/transformersx
 
+RUN rm -rf *
+
+# Copy as early as possible so we can cache ...
+COPY . .
+
+RUN pip install -r requirements.txt --no-cache-dir
