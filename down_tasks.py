@@ -1,6 +1,6 @@
 from aiharness.configuration import Arguments
-from tasks.configuration import TasksConfiguration
-from tasks.tasks import get_task, log, task_names
+from transformersx.tasks.configuration import TasksConfiguration
+from transformersx.tasks.tasks import get_task, log, task_names
 
 
 def main():

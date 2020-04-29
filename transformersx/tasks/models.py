@@ -39,8 +39,7 @@ base_models = [
     'hfl/chinese-electra-base-discriminator',
     'hfl/chinese-electra-base-generator',
     'hfl/chinese-xlnet-base',
-    'hfl/chinese-xlnet-mid',
-
+    'hfl/chinese-xlnet-mid'
 ]
 
 large_models = [
