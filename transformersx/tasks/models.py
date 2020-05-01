@@ -1,4 +1,4 @@
-from tasks.configuration import TasksConfiguration
+from transformersx.tasks.configuration import TasksConfiguration
 from transformers.modeling_auto import AutoConfig, AutoModel
 from transformers.tokenization_auto import AutoTokenizer
 from aiharness.executors import QueueExecutor
