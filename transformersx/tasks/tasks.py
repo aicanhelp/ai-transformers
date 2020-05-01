@@ -1,6 +1,6 @@
 from aiharness import harnessutils as aiutils
-from tasks.configuration import TasksConfiguration
-from tasks.models import download_models
+from transformersx.tasks.configuration import TasksConfiguration
+from transformersx.tasks.models import download_models
 
 log = aiutils.getLogger('task')
 
