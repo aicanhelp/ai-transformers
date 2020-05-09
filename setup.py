@@ -9,7 +9,6 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    metadata_version='2.1',
     name='ai-transformersx',
     version='0.1.0',
     description='A project for downloading pretrained model of huggingface easily',
@@ -63,7 +62,7 @@ setup(
     # },
 
     project_urls={  # Optional
-        'Bug Reports': 'https://github.com/aicanhelp/ai-harness/issues',
-        'Source': 'https://github.com/aicanhelp/ai-harness/',
+        'Bug Reports': 'https://github.com/aicanhelp/ai-transformersx/issues',
+        'Source': 'https://github.com/aicanhelp/ai-transformersx/',
     },
 )
