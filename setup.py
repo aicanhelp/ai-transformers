@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     metadata_version='2.1',
-    name='ai-transformers',
+    name='ai-transformersx',
     version='0.1.0',
     description='A project for downloading pretrained model of huggingface easily',
     long_description=long_description,
@@ -43,7 +43,7 @@ setup(
     package_dir={'': 'src'},  # Optional
     packages=find_packages(where='src'),  # Required
     python_requires='>=3.5, <4',
-    install_requires=['transformers>=2.8.0', 'ai-harness>=0.3.9'],  # Optional
+    install_requires=[],  # Optional
 
     extras_require={  # Optional
         'dev': ['check-manifest'],
