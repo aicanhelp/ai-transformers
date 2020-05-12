@@ -9,8 +9,9 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
+    metadata_version='2.1',
     name='ai-transformersx',
-    version='0.1.6',
+    version='0.1.9',
     description='A project for downloading pretrained model of huggingface easily',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -39,6 +40,7 @@ setup(
     ],
 
     keywords='deeplearning tools development',  # Optionalz
+
     packages=find_packages(),  # Required
     python_requires='>=3.5, <4',
     install_requires=[],  # Optional
@@ -62,6 +64,6 @@ setup(
 
     project_urls={  # Optional
         'Bug Reports': 'https://github.com/aicanhelp/ai-transformersx/issues',
-        'Source': 'https://github.com/aicanhelp/ai-transformersx/',
+        'Source': 'https://github.com/aicanhelp/ai-transformers/',
     },
 )
