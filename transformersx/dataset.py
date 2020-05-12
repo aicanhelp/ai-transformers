@@ -3,11 +3,12 @@ import time
 
 import torch
 from torch.utils.data import Dataset
-from transformers import InputFeatures, PreTrainedTokenizer, DataProcessor, torch_distributed_zero_first, \
+from transformers import InputFeatures, PreTrainedTokenizer, torch_distributed_zero_first, \
     RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer, InputExample
 from typing import List, Optional, Union
 
 from transformersx.configuration import DataTrainingArguments, log
+from transformersx.dataprocessor import DataProcessor
 
 
 class TaskDataset(Dataset):

@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='ai-transformersx',
-    version='0.1.1',
+    version='0.1.6',
     description='A project for downloading pretrained model of huggingface easily',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -38,9 +38,8 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
 
-    keywords='deeplearning tools development',  # Optional
-    package_dir={'': 'src'},  # Optional
-    packages=find_packages(where='src'),  # Required
+    keywords='deeplearning tools development',  # Optionalz
+    packages=find_packages(),  # Required
     python_requires='>=3.5, <4',
     install_requires=[],  # Optional
 
