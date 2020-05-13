@@ -1,11 +1,7 @@
 from transformersx.models import *
 
 
-def test_models():
-    for model in Tiny().models():
-        print(model.path)
-
-
-def test_model_sizes():
-    for m in models("tiny,base"):
-        print(m.path)
+class Test_Model_Tools:
+    def test_model_by_size(self):
+        for model in Model_Tools.models_by_size('tiny,small'):
+            print(model.path)

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from aiharness.configuration import field, configclass
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from aiharness import harnessutils as aiutils
 
 log = aiutils.getLogger('task')
@@ -13,6 +13,52 @@ class DownloadConfiguration:
     model_size: str = field('tiny,base', 'specifiy the model size')
     cache_dir: str = field('nlp_models_cache', 'specified the cache dir for models')
     task_name: str = field('download_models', 'specified the task name')
+
+
+@dataclass
+class Model_Type:
+    base: str = 'base'
+    pretrain: str = 'pretrain'
+    lm_head: str = 'lm_head'
+    qa: str = 'qa'
+    seq_cls: str = 'seq_cls'
+    token_cls: str = 'token_cls'
+    multi_choice: str = 'multi_choice'
+
+
+MODEL_TYPE_NAMES = [f.name for f in fields(Model_Type)]
+
+
+@dataclass
+class Model_Mode:
+    classification: str = 'classification'
+    regression: str = 'regression'
+
+
+MODEL_MODEL_NAMES = [f.name for f in fields(Model_Mode)]
+
+
+@dataclass
+class Model_Size:
+    distil: str = 'distil'
+    tiny: str = 'tiny'
+    small: str = 'small'
+    base: str = 'base'
+    large: str = 'large'
+
+
+MODEL_SIZE_NAMES = [f.name for f in fields(Model_Size)]
+
+
+@dataclass
+class Model_Class:
+    bert: str = 'bert'
+    albert: str = 'albert'
+    roberta: str = 'roberta'
+    electra: str = 'electra'
+
+
+MODEL_CLASS_NAMES = [f.name for f in fields(Model_Class)]
 
 
 @dataclass
@@ -36,15 +82,19 @@ class ModelArguments:
 
     model_base_dir: str = field(default="",
                                 metadata={"help": "the path base dir of models"})
-    model_type: str = field(default=0,
-                            metadata={
-                                "help": "the type of model: base,pretrain,lm_head,qa,seq_cls,token_cls,multi_choice"})
 
-    model_mode: str = field(default=0,
-                            metadata={"help": "the model of model: classification or regression"})
+    model_type: str = field(default="base",
+                            metadata={
+                                "help": "the type of model: " + str(MODEL_TYPE_NAMES)})
+
+    model_mode: str = field(default="classification",
+                            metadata={"help": "the model of model: " + str(MODEL_MODEL_NAMES)})
 
     model_size: str = field(default="base",
-                            metadata={"help": "the size of model: tiny,small,base,large"})
+                            metadata={"help": "the size of model: " + str(MODEL_SIZE_NAMES)})
+
+    model_cls: str = field(default="bert",
+                           metadata={"help": "the size of model: " + str(MODEL_CLASS_NAMES)})
 
     num_labels: str = field(default=2,
                             metadata={"help": "the number of label"})
