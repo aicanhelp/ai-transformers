@@ -6,10 +6,11 @@ from aiharness import harnessutils as aiutils
 
 log = aiutils.getLogger('task')
 
+
 @configclass()
 class DownloadConfiguration:
     model: str = field('electra', 'specified the model')
-    model_size: str = field('base', 'specifiy the model size')
+    model_size: str = field('tiny,base', 'specifiy the model size')
     cache_dir: str = field('nlp_models_cache', 'specified the cache dir for models')
     task_name: str = field('download_models', 'specified the task name')
 
@@ -35,6 +36,9 @@ class ModelArguments:
 
     model_base_dir: str = field(default="",
                                 metadata={"help": "the path base dir of models"})
+    model_type: str = field(default=0,
+                            metadata={
+                                "help": "the type of model: base,pretrain,lm_head,qa,seq_cls,token_cls,multi_choice"})
 
     model_mode: str = field(default=0,
                             metadata={"help": "the model of model: classification or regression"})
@@ -47,7 +51,7 @@ class ModelArguments:
 
 
 @dataclass
-class DataTrainingArguments:
+class DataArguments:
     """
     Arguments pertaining to what data we are going to input our model for training and eval.
 

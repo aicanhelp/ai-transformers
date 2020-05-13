@@ -7,7 +7,7 @@ from transformers import InputFeatures, PreTrainedTokenizer, torch_distributed_z
     RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer, InputExample
 from typing import List, Optional, Union
 
-from transformersx.configuration import DataTrainingArguments, log
+from transformersx.configuration import DataArguments, log
 from transformersx.dataprocessor import DataProcessor
 
 
@@ -17,12 +17,12 @@ class TaskDataset(Dataset):
     soon.
     """
 
-    args: DataTrainingArguments
+    args: DataArguments
     features: List[InputFeatures]
 
     def __init__(
             self,
-            args: DataTrainingArguments,
+            args: DataArguments,
             tokenizer: PreTrainedTokenizer,
             processor: DataProcessor,
             limit_length: Optional[int] = None,

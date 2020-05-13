@@ -1,25 +1,39 @@
 import os
 import random
 import sys
+from typing import Dict
 
+from dataclasses import dataclass
 import numpy as np
 import torch
 from aiharness.fileutils import join_path
-from transformers import HfArgumentParser, AutoConfig, AutoTokenizer, Trainer
+from transformers import HfArgumentParser, AutoConfig, AutoTokenizer, Trainer, modeling_auto, EvalPrediction
+from transformers.data.metrics import acc_and_f1
 
-from transformersx.configuration import ModelArguments, DataTrainingArguments,log
+from transformersx.configuration import ModelArguments, DataArguments, log
 from transformers.training_args import TrainingArguments
 from transformersx import models
 
-def parse_args():
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+
+@dataclass
+class TaskArguments:
+    model_args: ModelArguments
+    data_args: DataArguments
+    training_args: TrainingArguments
+
+
+def parse_args() -> TaskArguments:
+    parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
 
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
-        return parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+        m, d, t = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else:
-        return parser.parse_args_into_dataclasses()
+        m, d, t = parser.parse_args_into_dataclasses()
+
+    task_args = TaskArguments(m, d, t)
+    return task_args
 
 
 def set_seed(seed: int):
@@ -47,6 +61,14 @@ class TaskModel:
             self._model_args.model_path
         )
 
+        if not self._model_class:
+            self._model_class = models.model_class(config, self._model_args.model_type)
+            if not self._model_class:
+                raise ValueError(
+                    "Cannot find the model class for model type {} and config {}.".format(self._model_args.model_type,
+                                                                                          self._model_args.model_path)
+                )
+
         model = self._model(config)
 
         return config, tokenizer, model
@@ -62,9 +84,16 @@ class TaskModel:
             config=config
         )
 
+    def compute_metrics(self, p: EvalPrediction) -> Dict:
+        if self._model_args.model_mode == "classification":
+            preds = np.argmax(p.predictions, axis=1)
+        elif self._model_args.model_mode == "regression":
+            preds = np.squeeze(p.predictions)
+        return acc_and_f1(preds, p.label_ids)
+
 
 class TaskData:
-    def __init__(self, dataArgs: DataTrainingArguments,
+    def __init__(self, dataArgs: DataArguments,
                  tokenizer, datasetClass, local_rank):
         self._data_args = dataArgs
         self._tokenizer = tokenizer
@@ -94,7 +123,7 @@ class TaskTrainer:
         self._training_args = trainingArgs
         self._taskModel = taskModel
         self._taskData = taskData
-        self._compute_metrics = compute_metrics
+        self._compute_metrics = compute_metrics if compute_metrics else taskModel.compute_metrics
         self._trainer = self._create_trainer()
 
     def _check_train_args(self):
@@ -154,15 +183,14 @@ class TaskTrainer:
 
 
 class Task:
-    def __init__(self,
-                 modelArgs: ModelArguments,
-                 dataArgs: DataTrainingArguments,
-                 trainingArgs: TrainingArguments,
-                 datasetClass, model_class=None, compute_metric=None):
-        self._taskModel = TaskModel(modelArgs, model_class)
-        self._taskData = TaskData(dataArgs, self._taskModel.tokenizer, datasetClass, trainingArgs.local_rank)
-        self._taskTrainer = TaskTrainer(trainingArgs, self._taskModel, self._taskData, compute_metric)
-        self._training_args = trainingArgs
+    def __init__(self, task_args: TaskArguments,
+                 datasetClass, model_class=None, compute_metric=None, train=True):
+        self._taskModel = TaskModel(task_args.model_args, model_class)
+        self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, datasetClass,
+                                  task_args.training_args.local_rank) if task_args.training_args.do_train else None
+        self._taskTrainer = TaskTrainer(task_args.training_args, self._taskModel,
+                                        self._taskData, compute_metric) if task_args.training_args.do_train else None
+        self._training_args = task_args.training_args
 
     def _log_task_start(self):
         log.warning(
@@ -175,9 +203,15 @@ class Task:
         )
         log.info("Training/evaluation parameters %s", self._training_args)
 
-    def start(self):
+    def train(self):
+        if not self._training_args.do_train:
+            log.warn("do_train argument is set for False")
+            return
         self._log_task_start()
 
         set_seed(self._training_args.seed)
         results = self._taskTrainer.train().eval()
         return results
+
+    def predict(self, *input):
+        return self._taskModel.model(*input)
