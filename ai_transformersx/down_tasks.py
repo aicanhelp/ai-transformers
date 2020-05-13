@@ -1,6 +1,6 @@
-from aiharness.configuration import Arguments
-from transformersx.configuration import DownloadConfiguration, log
-from transformersx.models import download_models
+from ai_harness.configuration import Arguments
+from ai_transformersx.configuration import DownloadConfiguration, log
+from ai_transformersx.models import download_models
 
 
 def test_task(config: DownloadConfiguration):

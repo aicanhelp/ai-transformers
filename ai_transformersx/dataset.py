@@ -7,8 +7,8 @@ from transformers import InputFeatures, PreTrainedTokenizer, torch_distributed_z
     RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer, InputExample
 from typing import List, Optional, Union
 
-from transformersx.configuration import DataArguments, log
-from transformersx.dataprocessor import DataProcessor
+from ai_transformersx.configuration import DataArguments, log
+from ai_transformersx.dataprocessor import DataProcessor
 
 
 class TaskDataset(Dataset):

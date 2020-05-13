@@ -1,5 +1,5 @@
 ## Setup py requirements
-ai-harness>=0.3.10
+ai-harness>=0.4.1
 python-box>=4.2.2
 boltons>=20.0.0
 transformers>=2.8.0

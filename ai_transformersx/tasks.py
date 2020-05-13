@@ -6,13 +6,13 @@ from typing import Dict
 from dataclasses import dataclass
 import numpy as np
 import torch
-from aiharness.fileutils import join_path
+from ai_harness.fileutils import join_path
 from transformers import HfArgumentParser, AutoConfig, AutoTokenizer, Trainer, modeling_auto, EvalPrediction
 from transformers.data.metrics import acc_and_f1
 
-from transformersx.configuration import ModelArguments, DataArguments, log
+from ai_transformersx.configuration import ModelArguments, DataArguments, log
 from transformers.training_args import TrainingArguments
-from transformersx import models
+from ai_transformersx import models
 
 
 @dataclass

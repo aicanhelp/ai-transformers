@@ -1,4 +1,4 @@
-from transformersx.models import *
+from ai_transformersx.models import *
 
 
 class Test_Model_Tools:

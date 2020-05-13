@@ -1,8 +1,8 @@
 from typing import Optional
 
-from aiharness.configuration import field, configclass
+from ai_harness.configuration import field, configclass
 from dataclasses import dataclass, fields
-from aiharness import harnessutils as aiutils
+from ai_harness import harnessutils as aiutils
 
 log = aiutils.getLogger('task')
 
