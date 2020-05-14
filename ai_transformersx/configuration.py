@@ -1,64 +1,15 @@
-from typing import Optional
+import os
+import sys
+from typing import Optional, Tuple
 
-from ai_harness.configuration import field, configclass
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
 from ai_harness import harnessutils as aiutils
+from transformers import HfArgumentParser
+
+from ai_transformersx.training_args import TrainingArguments
+from ai_transformersx.models import *
 
 log = aiutils.getLogger('task')
-
-
-@configclass()
-class DownloadConfiguration:
-    model: str = field('electra', 'specified the model')
-    model_size: str = field('tiny,base', 'specifiy the model size')
-    cache_dir: str = field('nlp_models_cache', 'specified the cache dir for models')
-    task_name: str = field('download_models', 'specified the task name')
-
-
-@dataclass
-class Model_Type:
-    base: str = 'base'
-    pretrain: str = 'pretrain'
-    lm_head: str = 'lm_head'
-    qa: str = 'qa'
-    seq_cls: str = 'seq_cls'
-    token_cls: str = 'token_cls'
-    multi_choice: str = 'multi_choice'
-
-
-MODEL_TYPE_NAMES = [f.name for f in fields(Model_Type)]
-
-
-@dataclass
-class Model_Mode:
-    classification: str = 'classification'
-    regression: str = 'regression'
-
-
-MODEL_MODEL_NAMES = [f.name for f in fields(Model_Mode)]
-
-
-@dataclass
-class Model_Size:
-    distil: str = 'distil'
-    tiny: str = 'tiny'
-    small: str = 'small'
-    base: str = 'base'
-    large: str = 'large'
-
-
-MODEL_SIZE_NAMES = [f.name for f in fields(Model_Size)]
-
-
-@dataclass
-class Model_Class:
-    bert: str = 'bert'
-    albert: str = 'albert'
-    roberta: str = 'roberta'
-    electra: str = 'electra'
-
-
-MODEL_CLASS_NAMES = [f.name for f in fields(Model_Class)]
 
 
 @dataclass
@@ -67,9 +18,9 @@ class ModelArguments:
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
 
-    model_path: str = field(
-        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
-    )
+    model_path: str = field(default='',
+                            metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+                            )
     config_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
     )
@@ -80,7 +31,7 @@ class ModelArguments:
         default=None, metadata={"help": "Where do you want to store the pretrained models downloaded from s3"}
     )
 
-    model_base_dir: str = field(default="",
+    model_base_dir: str = field(default="./models/pretrained",
                                 metadata={"help": "the path base dir of models"})
 
     model_type: str = field(default="base",
@@ -90,14 +41,8 @@ class ModelArguments:
     model_mode: str = field(default="classification",
                             metadata={"help": "the model of model: " + str(MODEL_MODEL_NAMES)})
 
-    model_size: str = field(default="base",
-                            metadata={"help": "the size of model: " + str(MODEL_SIZE_NAMES)})
-
-    model_cls: str = field(default="bert",
-                           metadata={"help": "the class of model: " + str(MODEL_CLASS_NAMES)})
-
-    model_name: str = field(default="bert",
-                            metadata={"help": "the name of model: " + str(MODEL_CLASS_NAMES)})
+    model_name: str = field(default="Base.Bert.bert",
+                            metadata={"help": "the name of model: " + str(ALL_MODEL_NAMES)})
 
     num_labels: str = field(default=2,
                             metadata={"help": "the number of label"})
@@ -105,11 +50,6 @@ class ModelArguments:
     def validate(self):
         if not self.model_base_dir:
             raise ValueError("model_base_dir can not be empty.")
-        if not self.model_path and (not self.model_size or not self.model_cls or not self.model_name):
-            raise ValueError("if model_path is not set, model_size and model_cls and model_name all must be set.")
-
-    def set_model(self, model_cls, model_size, model_name):
-        self.model_cls, self.model_size, self.model_name = model_cls, model_size, model_name
 
 
 @dataclass
@@ -126,12 +66,9 @@ class DataArguments:
                                "help": "The input data dir. Should contain the .tsv files (or other data files) for the task."}
                            )
 
-    model_mode: str = field(default=0,
-                            metadata={"help": "the model of model: classification or regression"})
+    model_mode_for_data: str = field(default="classification",
+                                     metadata={"help": "the model of model: classification or regression"})
 
-    data_dir: str = field(
-        metadata={"help": "The input data dir. Should contain the .tsv files (or other data files) for the task."}
-    )
     max_seq_length: int = field(
         default=128,
         metadata={
@@ -142,3 +79,26 @@ class DataArguments:
     overwrite_cache: bool = field(
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
     )
+
+
+@dataclass
+class TaskArguments:
+    model_args: ModelArguments
+    data_args: DataArguments
+    training_args: TrainingArguments
+
+
+def parse_args(*extensions) -> (TaskArguments,):
+    parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments) + extensions)
+
+    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+        # If we pass only one argument to the script and it's the path to a json file,
+        # let's parse it to get our arguments.
+        args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+    else:
+        args = parser.parse_args_into_dataclasses()
+
+    if not args[2].output_dir:
+        args[2].output_dir = 'models/finetuning'
+    task_args = TaskArguments(args[0], args[1], args[2])
+    return (task_args,) + args[3:]

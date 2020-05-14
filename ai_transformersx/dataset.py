@@ -10,7 +10,8 @@ from typing import List, Optional, Union
 from ai_transformersx.configuration import DataArguments, log
 from ai_transformersx.dataprocessor import DataProcessor
 
-
+###TODO: The Dataset should be refactored for many data sources
+###TODO: Behind the dataset, it should have a data sources. So the data processor should be the data sources.
 class TaskDataset(Dataset):
     """
     This will be superseded by a framework-agnostic approach
@@ -70,7 +71,7 @@ class TaskDataset(Dataset):
                     processor,
                     max_length=args.max_seq_length,
                     label_list=label_list,
-                    output_mode=self.args.model_mode,
+                    output_mode=self.args.model_mode_for_data,
                 )
                 if local_rank in [-1, 0]:
                     start = time.time()

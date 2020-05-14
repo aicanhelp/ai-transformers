@@ -1,9 +1,38 @@
-from ai_transformersx.tasks import TaskArguments, Task, parse_args
-from ai_transformersx.configuration import Model_Mode, Model_Type, Model_Class, Model_Size
+from transformers import InputExample
+
+from ai_transformersx.dataprocessor import DataProcessor
+
+from ai_transformersx.tasks import TaskArguments, TransformerTask
+from ai_transformersx.configuration import Model_Mode, Model_Type, Model_Class, Model_Size, parse_args
+from ai_transformersx.models import Base, Model
+
+
+class TestDataProcessor(DataProcessor):
+    def get_train_examples(self):
+        return [InputExample(guid='train_' + str(i), text_a="train_a_" + str(i), text_b="train_b_" + str(i),
+                             label=str(i % 2)) for i in range(100)]
+
+    def get_dev_examples(self):
+        return [InputExample(guid='dev_' + str(i), text_a="dev_a_" + str(i), text_b="dev_b_" + str(i),
+                             label=str(i % 2)) for i in range(10)]
+
+    def get_labels(self):
+        return ['0', '1']
 
 
 class Test_Task:
-    def test_bert(self):
-        self.task_args: TaskArguments = parse_args()
-        self.task_args.model_args.model_path = './models'
-        self.task_args.model_args.set_model(Model_Type.seq_cls, Model_Class.bert, Model_Size.base)
+    def test_bert_default(self):
+        task_args = parse_args()
+        task_args.model_args.model_base_dir = '../models/pretrained'
+        TransformerTask(task_args, TestDataProcessor).train()
+
+    def test_bert_set1(self):
+        task_args = parse_args()
+        task_args.model_args.model_base_dir = '../models/pretrained'
+        TransformerTask(task_args, TestDataProcessor, Base.Bert.bert).train()
+
+    def test_bert_set2(self):
+        task_args = parse_args()
+        task_args.model_args.model_base_dir = '../models/pretrained'
+        task_args.model_args.model_name = 'Base.Bert.bert'
+        TransformerTask(task_args, TestDataProcessor, Base.Bert.bert).train()

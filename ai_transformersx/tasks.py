@@ -3,39 +3,20 @@ import random
 import sys
 from typing import Dict
 
+from ai_transformersx.dataprocessor import DataProcessor
+
 from ai_transformersx.dataset import TaskDataset
-from dataclasses import dataclass
 import numpy as np
 import torch
 from ai_harness.fileutils import join_path
-from transformers import HfArgumentParser, AutoConfig, AutoTokenizer, Trainer, modeling_auto, EvalPrediction
+from transformers import AutoConfig, AutoTokenizer, Trainer, EvalPrediction, \
+    PreTrainedModel
 from transformers.data.metrics import acc_and_f1
 
-from ai_transformersx.configuration import ModelArguments, DataArguments, log, Model_Mode
-from ai_transformersx.models import Model_Tools
-from transformers.training_args import TrainingArguments
+from ai_transformersx.configuration import ModelArguments, DataArguments, log, Model_Mode, TaskArguments, parse_args
+from ai_transformersx.models import Model_Tools, Model
 from ai_transformersx import models
-
-
-@dataclass
-class TaskArguments:
-    model_args: ModelArguments
-    data_args: DataArguments
-    training_args: TrainingArguments
-
-
-def parse_args() -> TaskArguments:
-    parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
-
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        # If we pass only one argument to the script and it's the path to a json file,
-        # let's parse it to get our arguments.
-        m, d, t = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    else:
-        m, d, t = parser.parse_args_into_dataclasses()
-
-    task_args = TaskArguments(m, d, t)
-    return task_args
+from ai_transformersx.training_args import TrainingArguments
 
 
 def set_seed(seed: int):
@@ -49,46 +30,43 @@ def set_seed(seed: int):
 class TaskModel:
     def __init__(self, modelArgs: ModelArguments, model_class=None):
         self._model_args = modelArgs
-        self.model_path = modelArgs.model_path
-        self._model_class = model_class
-        self.config, self.tokenizer, self.model = self._init()
+        self._model_class = model_class if model_class else modelArgs.model_name
+        self._model_path = self._make_model_path()
+        self._init()
 
     def _init(self):
         self._model_args.validate()
-        config = AutoConfig.from_pretrained(
-            self._model_args.model_path,
+        self.config = AutoConfig.from_pretrained(
+            self._model_path,
             num_labels=self._model_args.num_labels
         )
 
-        tokenizer = AutoTokenizer.from_pretrained(
-            self._model_args.model_path
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(self._model_path)
 
-        model = self._model(config)
-
-        return config, tokenizer, model
+        self.model = self._model(self.config)
 
     def _model(self, config):
-        model_path = self._make_model_path()
         model_class = self._get_model_class()
 
         return model_class.from_pretrained(
-            model_path,
+            self._model_path,
             config=config
         )
 
     def _make_model_path(self):
         if self._model_args.model_path:
-            model_path = join_path(self._model_args.model_base_dir, self._model_args.model_path)
-        else:
-            model_path = join_path(self._model_args.model_base_dir,
-                                   Model_Tools.model(self._model_args.model_size, self._model_args.model_cls,
-                                                     self._model_args.model_name))
+            return join_path(self._model_args.model_base_dir, self._model_args.model_path)
 
-        return model_path
+        if isinstance(self._model_class, Model):
+            return join_path(self._model_args.model_base_dir, self._model_class.path)
+
+        if isinstance(self._model_class, str):
+            return join_path(self._model_args.model_base_dir, Model_Tools.model_by(self._model_class).path)
+
+        raise ValueError("Cannot get model path.")
 
     def _get_model_class(self):
-        if self._model_class:
+        if isinstance(self._model_class, PreTrainedModel):
             return self._model_class
         model_class = models.model_class(self.config, self._model_args.model_type)
         if not model_class:
@@ -109,10 +87,10 @@ class TaskModel:
 
 class TaskData:
     def __init__(self, dataArgs: DataArguments,
-                 tokenizer, dataProcessorClass, local_rank):
+                 tokenizer, dataProcessor: DataProcessor, local_rank):
         self._data_args = dataArgs
         self._tokenizer = tokenizer
-        self._processor = dataProcessorClass(dataArgs)
+        self._processor = dataProcessor
         self._local_rank = local_rank
         self._train_data, self._eval_data = None, None
 
@@ -166,7 +144,7 @@ class TaskTrainer:
     def train(self):
         if self._training_args.do_train:
             self._trainer.train(
-                model_path=self._taskModel.model_path
+                model_path=self._training_args.output_dir
             )
             self._trainer.save_model()
             # For convenience, we also re-save the tokenizer to the same directory,
@@ -199,12 +177,13 @@ class TaskTrainer:
         return results
 
 
-class Task:
+class TransformerTask:
     def __init__(self, task_args: TaskArguments,
-                 dataProcessorClass, model_class=None, compute_metric=None):
+                 dataProcessor, model_class=None, compute_metric=None):
+        log.info(task_args)
         self.task_args = task_args
         self._taskModel = TaskModel(task_args.model_args, model_class)
-        self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessorClass,
+        self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessor,
                                   task_args.training_args.local_rank) if task_args.training_args.do_train else None
         self._taskTrainer = TaskTrainer(task_args.training_args, self._taskModel,
                                         self._taskData, compute_metric) if task_args.training_args.do_train else None
@@ -235,6 +214,6 @@ class Task:
         return self._taskModel.model(*input)
 
 
-class DefaultTask(Task):
+class DefaultTask(TransformerTask):
     def __init__(self, dataProcessorClass, model_class=None, compute_metric=None):
         super().__init__(parse_args(), dataProcessorClass, model_class, compute_metric)

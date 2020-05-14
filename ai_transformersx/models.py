@@ -1,17 +1,59 @@
 from collections import OrderedDict
 
 from dataclasses import dataclass, fields
+from more_itertools import flatten
 from transformers.modeling_auto import MODEL_FOR_MULTIPLE_CHOICE_MAPPING, \
     MODEL_FOR_PRETRAINING_MAPPING, MODEL_FOR_QUESTION_ANSWERING_MAPPING, MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING, \
     MODEL_FOR_TOKEN_CLASSIFICATION_MAPPING, MODEL_MAPPING, MODEL_WITH_LM_HEAD_MAPPING
-from ai_transformersx.configuration import DownloadConfiguration, ModelArguments, Model_Type, Model_Mode
-from transformers.modeling_auto import AutoConfig, AutoModel
-from transformers.tokenization_auto import AutoTokenizer
-from ai_harness.executors import QueueExecutor
 from ai_harness import harnessutils as utils
-from ai_harness.fileutils import join_path
 
 log = utils.getLogger('task')
+
+
+@dataclass
+class Model_Type:
+    base: str = 'base'
+    pretrain: str = 'pretrain'
+    lm_head: str = 'lm_head'
+    qa: str = 'qa'
+    seq_cls: str = 'seq_cls'
+    token_cls: str = 'token_cls'
+    multi_choice: str = 'multi_choice'
+
+
+MODEL_TYPE_NAMES = [f.name for f in fields(Model_Type)]
+
+
+@dataclass
+class Model_Mode:
+    classification: str = 'classification'
+    regression: str = 'regression'
+
+
+MODEL_MODEL_NAMES = [f.name for f in fields(Model_Mode)]
+
+
+@dataclass
+class Model_Size:
+    distil: str = 'distil'
+    tiny: str = 'tiny'
+    small: str = 'small'
+    base: str = 'base'
+    large: str = 'large'
+
+
+MODEL_SIZE_NAMES = [f.name for f in fields(Model_Size)]
+
+
+@dataclass
+class Model_Class:
+    bert: str = 'bert'
+    albert: str = 'albert'
+    roberta: str = 'roberta'
+    electra: str = 'electra'
+
+
+MODEL_CLASS_NAMES = [f.name for f in fields(Model_Class)]
 
 all_model_mappings = OrderedDict([(Model_Type.base, MODEL_MAPPING),
                                   (Model_Type.lm_head, MODEL_WITH_LM_HEAD_MAPPING),
@@ -138,6 +180,9 @@ class Large(Models):
         xlnet_clue: Model = Model("clue/xlnet_chinese_large")
 
 
+ALL_MODEL_SIZES = [Distil, Tiny, Small, Base, Large]
+
+
 class Model_Tools:
     @staticmethod
     def models(cls):
@@ -146,6 +191,20 @@ class Model_Tools:
     @staticmethod
     def model_names(cls):
         return [f.name for f in fields(cls)]
+
+    @staticmethod
+    def all_models():
+        return flatten(
+            flatten(Model_Tools.models(group) for group in Model_Tools.model_groups(size)) for size in ALL_MODEL_SIZES)
+
+    @staticmethod
+    def all_model_names():
+        return flatten(
+            flatten(
+                (size.__name__ + '.' + group.__name__ + '.' + name for name in Model_Tools.model_names(group)) for group
+                in Model_Tools.model_groups(size)) for size
+            in
+            ALL_MODEL_SIZES)
 
     @staticmethod
     def model_groups(cls):
@@ -164,25 +223,12 @@ class Model_Tools:
 
     @staticmethod
     def model(model_size: str, model_class: str, model_name: str):
-        return eval(model_size.capitalize() + '.' + model_class.capitalize() + '.' + model_name)
+        model = model_size.capitalize() + '.' + model_class.capitalize() + '.' + model_name
+        return eval(model)
+
+    @staticmethod
+    def model_by(model_name):
+        return eval(model_name)
 
 
-class Downloader():
-    def __init__(self, config: DownloadConfiguration):
-        self._config = config
-        self.models = Model_Tools.models_by_size(config.model_size)
-
-    def __call__(self, *args, **kwargs):
-        QueueExecutor(self.models, worker_num=8).run(self._download_model)
-
-    def _download_model(self, model_names):
-        for model_name in model_names:
-            log.info('Initial model of ' + model_name)
-            cache_dir = join_path(self._config.cache_dir, model_name)
-            AutoConfig.from_pretrained(model_name, cache_dir=cache_dir)
-            AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-            AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
-
-
-def download_models(config: DownloadConfiguration):
-    Downloader(config)()
+ALL_MODEL_NAMES = Model_Tools.all_model_names()
