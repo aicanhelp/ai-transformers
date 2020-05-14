@@ -3,6 +3,7 @@ import random
 import sys
 from typing import Dict
 
+from ai_transformersx.dataset import TaskDataset
 from dataclasses import dataclass
 import numpy as np
 import torch
@@ -10,7 +11,8 @@ from ai_harness.fileutils import join_path
 from transformers import HfArgumentParser, AutoConfig, AutoTokenizer, Trainer, modeling_auto, EvalPrediction
 from transformers.data.metrics import acc_and_f1
 
-from ai_transformersx.configuration import ModelArguments, DataArguments, log
+from ai_transformersx.configuration import ModelArguments, DataArguments, log, Model_Mode
+from ai_transformersx.models import Model_Tools
 from transformers.training_args import TrainingArguments
 from ai_transformersx import models
 
@@ -52,6 +54,7 @@ class TaskModel:
         self.config, self.tokenizer, self.model = self._init()
 
     def _init(self):
+        self._model_args.validate()
         config = AutoConfig.from_pretrained(
             self._model_args.model_path,
             num_labels=self._model_args.num_labels
@@ -61,59 +64,73 @@ class TaskModel:
             self._model_args.model_path
         )
 
-        if not self._model_class:
-            self._model_class = models.model_class(config, self._model_args.model_type)
-            if not self._model_class:
-                raise ValueError(
-                    "Cannot find the model class for model type {} and config {}.".format(self._model_args.model_type,
-                                                                                          self._model_args.model_path)
-                )
-
         model = self._model(config)
 
         return config, tokenizer, model
 
     def _model(self, config):
-        mode_path = join_path(self._model_args.model_base_dir,
-                              self._model_args.model_size,
-                              self._model_args.model_path)
+        model_path = self._make_model_path()
+        model_class = self._get_model_class()
 
-        model_cls = self._model_class if self._model_class else models.model_class(self.config)
-        return model_cls.from_pretrained(
-            mode_path,
+        return model_class.from_pretrained(
+            model_path,
             config=config
         )
 
+    def _make_model_path(self):
+        if self._model_args.model_path:
+            model_path = join_path(self._model_args.model_base_dir, self._model_args.model_path)
+        else:
+            model_path = join_path(self._model_args.model_base_dir,
+                                   Model_Tools.model(self._model_args.model_size, self._model_args.model_cls,
+                                                     self._model_args.model_name))
+
+        return model_path
+
+    def _get_model_class(self):
+        if self._model_class:
+            return self._model_class
+        model_class = models.model_class(self.config, self._model_args.model_type)
+        if not model_class:
+            if not self._model_class:
+                raise ValueError(
+                    "Cannot find the model class for model type {} and config {}.".format(self._model_args.model_type,
+                                                                                          self._model_args.model_path)
+                )
+        return model_class
+
     def compute_metrics(self, p: EvalPrediction) -> Dict:
-        if self._model_args.model_mode == "classification":
+        if self._model_args.model_mode == Model_Mode.classification:
             preds = np.argmax(p.predictions, axis=1)
-        elif self._model_args.model_mode == "regression":
+        elif self._model_args.model_mode == Model_Mode.regression:
             preds = np.squeeze(p.predictions)
         return acc_and_f1(preds, p.label_ids)
 
 
 class TaskData:
     def __init__(self, dataArgs: DataArguments,
-                 tokenizer, datasetClass, local_rank):
+                 tokenizer, dataProcessorClass, local_rank):
         self._data_args = dataArgs
         self._tokenizer = tokenizer
-        self._datasetClass = datasetClass
+        self._processor = dataProcessorClass(dataArgs)
         self._local_rank = local_rank
         self._train_data, self._eval_data = None, None
 
     def train_data(self):
         if not self._train_data:
-            self._train_data = self._datasetClass(self._data_args,
-                                                  tokenizer=self._tokenizer,
-                                                  local_rank=self._local_rank)
+            self._train_data = TaskDataset(self._data_args,
+                                           tokenizer=self._tokenizer,
+                                           processor=self._processor,
+                                           local_rank=self._local_rank)
         return self._train_data
 
     def eval_data(self):
         if not self._eval_data:
-            self._eval_data = self._datasetClass(self._data_args,
-                                                 tokenizer=self._tokenizer,
-                                                 local_rank=self._local_rank,
-                                                 evaluate=True)
+            self._eval_data = TaskDataset(self._data_args,
+                                          tokenizer=self._tokenizer,
+                                          processor=self._processor,
+                                          local_rank=self._local_rank,
+                                          evaluate=True)
         return self._eval_data
 
 
@@ -184,9 +201,10 @@ class TaskTrainer:
 
 class Task:
     def __init__(self, task_args: TaskArguments,
-                 datasetClass, model_class=None, compute_metric=None, train=True):
+                 dataProcessorClass, model_class=None, compute_metric=None):
+        self.task_args = task_args
         self._taskModel = TaskModel(task_args.model_args, model_class)
-        self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, datasetClass,
+        self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessorClass,
                                   task_args.training_args.local_rank) if task_args.training_args.do_train else None
         self._taskTrainer = TaskTrainer(task_args.training_args, self._taskModel,
                                         self._taskData, compute_metric) if task_args.training_args.do_train else None
@@ -215,3 +233,8 @@ class Task:
 
     def predict(self, *input):
         return self._taskModel.model(*input)
+
+
+class DefaultTask(Task):
+    def __init__(self, dataProcessorClass, model_class=None, compute_metric=None):
+        super().__init__(parse_args(), dataProcessorClass, model_class, compute_metric)

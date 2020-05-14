@@ -58,15 +58,16 @@ class TaskDataset(Dataset):
                     # HACK(label indices are swapped in RoBERTa pretrained model)
                     label_list[1], label_list[2] = label_list[2], label_list[1]
                 examples = (
-                    processor.get_dev_examples(args.data_dir)
+                    processor.get_dev_examples()
                     if evaluate
-                    else processor.get_train_examples(args.data_dir)
+                    else processor.get_train_examples()
                 )
                 if limit_length is not None:
                     examples = examples[:limit_length]
                 self.features = _glue_convert_examples_to_features(
                     examples,
                     tokenizer,
+                    processor,
                     max_length=args.max_seq_length,
                     label_list=label_list,
                     output_mode=self.args.model_mode,

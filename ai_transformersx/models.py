@@ -4,7 +4,7 @@ from dataclasses import dataclass, fields
 from transformers.modeling_auto import MODEL_FOR_MULTIPLE_CHOICE_MAPPING, \
     MODEL_FOR_PRETRAINING_MAPPING, MODEL_FOR_QUESTION_ANSWERING_MAPPING, MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING, \
     MODEL_FOR_TOKEN_CLASSIFICATION_MAPPING, MODEL_MAPPING, MODEL_WITH_LM_HEAD_MAPPING
-from ai_transformersx.configuration import DownloadConfiguration, ModelArguments, Model_Type
+from ai_transformersx.configuration import DownloadConfiguration, ModelArguments, Model_Type, Model_Mode
 from transformers.modeling_auto import AutoConfig, AutoModel
 from transformers.tokenization_auto import AutoTokenizer
 from ai_harness.executors import QueueExecutor
@@ -24,7 +24,7 @@ all_model_mappings = OrderedDict([(Model_Type.base, MODEL_MAPPING),
 
 
 def model_class(config, model_type):
-    mapping = all_model_mappings.get(config.model_mode)
+    mapping = all_model_mappings.get(model_type)
     if not mapping:
         raise ValueError(
             "Cannot find the model class for model mode {}.".format(model_type)
@@ -161,6 +161,10 @@ class Model_Tools:
         for g in groups:
             models.extend(g().models())
         return models
+
+    @staticmethod
+    def model(model_size: str, model_class: str, model_name: str):
+        return eval(model_size.capitalize() + '.' + model_class.capitalize() + '.' + model_name)
 
 
 class Downloader():

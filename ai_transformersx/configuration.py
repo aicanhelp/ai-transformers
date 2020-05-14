@@ -94,10 +94,22 @@ class ModelArguments:
                             metadata={"help": "the size of model: " + str(MODEL_SIZE_NAMES)})
 
     model_cls: str = field(default="bert",
-                           metadata={"help": "the size of model: " + str(MODEL_CLASS_NAMES)})
+                           metadata={"help": "the class of model: " + str(MODEL_CLASS_NAMES)})
+
+    model_name: str = field(default="bert",
+                            metadata={"help": "the name of model: " + str(MODEL_CLASS_NAMES)})
 
     num_labels: str = field(default=2,
                             metadata={"help": "the number of label"})
+
+    def validate(self):
+        if not self.model_base_dir:
+            raise ValueError("model_base_dir can not be empty.")
+        if not self.model_path and (not self.model_size or not self.model_cls or not self.model_name):
+            raise ValueError("if model_path is not set, model_size and model_cls and model_name all must be set.")
+
+    def set_model(self, model_cls, model_size, model_name):
+        self.model_cls, self.model_size, self.model_name = model_cls, model_size, model_name
 
 
 @dataclass
