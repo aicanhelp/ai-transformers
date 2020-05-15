@@ -2,10 +2,9 @@ from transformers import InputExample
 
 from ai_transformersx.dataprocessor import DataProcessor
 
-from ai_transformersx.tasks import TaskArguments, TransformerTask
-from ai_transformersx.configuration import Model_Mode, Model_Type, Model_Class, Model_Size, parse_args
-from ai_transformersx.models import Base, Model
-import json
+from ai_transformersx.tasks import TransformerTask
+from ai_transformersx.configuration import parse_args
+from ai_transformersx.models import Base
 
 
 class TestDataProcessor(DataProcessor):

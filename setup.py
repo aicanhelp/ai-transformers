@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     metadata_version='2.1',
     name='ai-transformersx',
-    version='0.2.1',
+    version='0.2.2',
     description='A project for downloading pretrained model of huggingface easily',
     long_description=long_description,
     long_description_content_type='text/markdown',

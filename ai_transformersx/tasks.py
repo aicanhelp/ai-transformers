@@ -1,7 +1,6 @@
 import json
 import os
 import random
-import sys
 from typing import Dict
 
 from ai_transformersx.dataprocessor import DataProcessor
@@ -28,21 +27,26 @@ def set_seed(seed: int):
     # ^^ safe to call this function even if cuda is not available
 
 
+##TODO: need to refactor the TaskModel for various cases
+##(1) train a pretrained model from scratch
+##(2) finetuning a task based on a pretrained Model
+##(3) resume a task from the training interruption
+## Currently, if need to resume the training, you must reset the model_path to the checkpoint
 class TaskModel:
     def __init__(self, modelArgs: ModelArguments, model_class=None):
         self._model_args = modelArgs
         self._model_class = model_class if model_class else modelArgs.model_name
-        self._model_path = self._make_model_path()
+        self.model_path = self._make_model_path()
         self._init()
 
     def _init(self):
         self._model_args.validate()
         self.config = AutoConfig.from_pretrained(
-            self._model_path,
+            self.model_path,
             num_labels=self._model_args.num_labels
         )
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self._model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
 
         self.model = self._model(self.config)
 
@@ -50,7 +54,7 @@ class TaskModel:
         model_class = self._get_model_class()
 
         return model_class.from_pretrained(
-            self._model_path,
+            self.model_path,
             config=config
         )
 
@@ -144,8 +148,9 @@ class TaskTrainer:
 
     def train(self):
         if self._training_args.do_train:
+            # Here, the model_path is for the trainer to load the optimizer and scheduler states
             self._trainer.train(
-                model_path=self._training_args.output_dir
+                model_path=self._taskModel.model_path
             )
             self._trainer.save_model()
             # For convenience, we also re-save the tokenizer to the same directory,
