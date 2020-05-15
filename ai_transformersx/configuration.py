@@ -63,7 +63,7 @@ class DataArguments:
     """
     task_name: str = field(default="",
                            metadata={
-                               "help": "The input data dir. Should contain the .tsv files (or other data files) for the task."}
+                               "help": "the task name."}
                            )
 
     model_mode_for_data: str = field(default="classification",

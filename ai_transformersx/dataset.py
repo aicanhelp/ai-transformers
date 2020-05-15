@@ -33,7 +33,7 @@ class TaskDataset(Dataset):
         self.args = args
         # Load data features from cache or dataset file
         cached_features_file = os.path.join(
-            args.data_dir,
+            processor.data_dir(),
             "cached_{}_{}_{}_{}".format(
                 "dev" if evaluate else "train", tokenizer.__class__.__name__, str(args.max_seq_length), args.task_name,
             ),
@@ -49,7 +49,7 @@ class TaskDataset(Dataset):
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                log.info(f"Creating features from dataset file at {args.data_dir}")
+                log.info(f"Creating features from dataset file at {processor.data_dir()}")
                 label_list = processor.get_labels()
                 if args.task_name in ["mnli", "mnli-mm"] and tokenizer.__class__ in (
                         RobertaTokenizer,
