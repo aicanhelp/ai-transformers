@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import sys
@@ -180,7 +181,9 @@ class TaskTrainer:
 class TransformerTask:
     def __init__(self, task_args: TaskArguments,
                  dataProcessor, model_class=None, compute_metric=None):
-        log.info(task_args)
+        log.info("Create a TransformerTask with arguments: ")
+        log.info(json.dumps(task_args, default=lambda obj: obj.__dict__, indent=True))
+
         self.task_args = task_args
         self._taskModel = TaskModel(task_args.model_args, model_class)
         self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessor,

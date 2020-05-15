@@ -101,4 +101,4 @@ def parse_args(*extensions) -> (TaskArguments,):
     if not args[2].output_dir:
         args[2].output_dir = 'models/finetuning'
     task_args = TaskArguments(args[0], args[1], args[2])
-    return (task_args,) + args[3:]
+    return task_args, tuple(args[3:])

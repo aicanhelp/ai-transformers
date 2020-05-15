@@ -5,6 +5,7 @@ from ai_transformersx.dataprocessor import DataProcessor
 from ai_transformersx.tasks import TaskArguments, TransformerTask
 from ai_transformersx.configuration import Model_Mode, Model_Type, Model_Class, Model_Size, parse_args
 from ai_transformersx.models import Base, Model
+import json
 
 
 class TestDataProcessor(DataProcessor):
@@ -22,17 +23,18 @@ class TestDataProcessor(DataProcessor):
 
 class Test_Task:
     def test_bert_default(self):
-        task_args = parse_args()
+        task_args, _ = parse_args()
         task_args.model_args.model_base_dir = '../models/pretrained'
         TransformerTask(task_args, TestDataProcessor).train()
 
     def test_bert_set1(self):
-        task_args = parse_args()
+        task_args, _ = parse_args()
         task_args.model_args.model_base_dir = '../models/pretrained'
         TransformerTask(task_args, TestDataProcessor, Base.Bert.bert).train()
 
     def test_bert_set2(self):
-        task_args = parse_args()
+        task_args, _ = parse_args()
+
         task_args.model_args.model_base_dir = '../models/pretrained'
         task_args.model_args.model_name = 'Base.Bert.bert'
         TransformerTask(task_args, TestDataProcessor, Base.Bert.bert).train()
