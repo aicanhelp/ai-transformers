@@ -31,7 +31,7 @@ class ModelArguments:
     model_base_dir: str = field(default="./models/pretrained",
                                 metadata={"help": "the path base dir of models"})
 
-    model_type: str = field(default="base",
+    model_type: str = field(default="seq_cls",
                             metadata={
                                 "help": "the type of model: " + str(MODEL_TYPE_NAMES)})
 

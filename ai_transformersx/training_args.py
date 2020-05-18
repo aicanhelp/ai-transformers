@@ -55,7 +55,7 @@ class TrainingArguments:
     do_eval: bool = field(default=False, metadata={"help": "Whether to run eval on the dev set."})
     do_predict: bool = field(default=False, metadata={"help": "Whether to run predictions on the test set."})
     evaluate_during_training: bool = field(
-        default=False, metadata={"help": "Run evaluation during training at each logging step."},
+        default=True, metadata={"help": "Run evaluation during training at each logging step."},
     )
 
     per_gpu_train_batch_size: int = field(default=8, metadata={"help": "Batch size per GPU/CPU for training."})
