@@ -27,9 +27,6 @@ class ModelArguments:
     tokenizer_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
     )
-    cache_dir: Optional[str] = field(
-        default=None, metadata={"help": "Where do you want to store the pretrained models downloaded from s3"}
-    )
 
     model_base_dir: str = field(default="./models/pretrained",
                                 metadata={"help": "the path base dir of models"})
@@ -69,8 +66,9 @@ class DataArguments:
     model_mode_for_data: str = field(default="classification",
                                      metadata={"help": "the model of model: classification or regression"})
 
+    ##todo: refactor to use the max_position_embeddings of the config of model
     max_seq_length: int = field(
-        default=128,
+        default=512,
         metadata={
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
