@@ -169,3 +169,7 @@ class TrainingArguments:
         if is_torch_available():
             valid_types.append(torch.Tensor)
         return {k: v if type(v) in valid_types else str(v) for k, v in d.items()}
+
+    def validate(self):
+        if self.evaluate_during_training:
+            self.do_eval = True
