@@ -1,22 +1,21 @@
-FROM pytorch/pytorch
+FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-base:latest
 #Why not pull all docker files into a folder? Because the building in Aliyun has some problem.
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \
       version="1.0.0"
 
-RUN apt-get clean && apt-get update --fix-missing
-RUN apt-get install -y --fix-missing --no-install-recommends \
-  build-essential && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-  mkdir -p /app/transformersx && mkdir /app/models
-
 WORKDIR /app/transformersx
 
 RUN rm -rf *
 
 # Copy as early as possible so we can cache ...
-COPY . .
+COPY .. .
 
 RUN pip install -r requirements.txt --no-cache-dir
+
+RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --task-name download_models --model-size base
+
+
+
+

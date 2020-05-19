@@ -3,12 +3,14 @@ import time
 
 import torch
 from torch.utils.data import Dataset
+from tqdm.notebook import tqdm
 from transformers import InputFeatures, PreTrainedTokenizer, torch_distributed_zero_first, \
     RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer, InputExample
 from typing import List, Optional, Union
 
 from ai_transformersx.configuration import DataArguments, log
 from ai_transformersx.dataprocessor import DataProcessor
+
 
 ###TODO: The Dataset should be refactored for many data sources
 ###TODO: Behind the dataset, it should have a data sources. So the data processor should be the data sources.
@@ -74,11 +76,12 @@ class TaskDataset(Dataset):
                     output_mode=self.args.model_mode_for_data,
                 )
                 if local_rank in [-1, 0]:
+                    log.info("Saving features into cached file %s", cached_features_file)
                     start = time.time()
                     torch.save(self.features, cached_features_file)
                     # ^ This seems to take a lot of time so I want to investigate why and how we can improve.
                     log.info(
-                        f"Saving features into cached file %s [took %.3f s]", cached_features_file, time.time() - start
+                        f"Saved features into cached file %s [took %.3f s]", cached_features_file, time.time() - start
                     )
 
     def __len__(self):
@@ -96,6 +99,7 @@ def _glue_convert_examples_to_features(
         task=None,
         label_list=None,
         output_mode=None,
+        progress_bar=False
 ):
     """
         Loads a data file into a list of ``InputFeatures``
@@ -114,6 +118,7 @@ def _glue_convert_examples_to_features(
             a list of task-specific ``InputFeatures`` which can be fed to the model.
 
         """
+    log.info("Converting Examples to features .... total: " + str(len(examples)))
     if max_length is None:
         max_length = tokenizer.max_len
 
@@ -133,12 +138,15 @@ def _glue_convert_examples_to_features(
 
     labels = [label_from_example(example) for example in examples]
 
+    epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
+
     batch_encoding = tokenizer.batch_encode_plus(
-        [(example.text_a, example.text_b) for example in examples], max_length=max_length, pad_to_max_length=True,
+        [(example.text_a, example.text_b) for example in epoch_iterator], max_length=max_length, pad_to_max_length=True,
     )
 
+    epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
     features = []
-    for i in range(len(examples)):
+    for i in range(len(epoch_iterator)):
         inputs = {k: batch_encoding[k][i] for k in batch_encoding}
 
         feature = InputFeatures(**inputs, label=labels[i])

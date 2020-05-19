@@ -173,3 +173,8 @@ class TrainingArguments:
     def validate(self):
         if self.evaluate_during_training:
             self.do_eval = True
+
+    def train(self):
+        self.do_train = True
+        self.do_eval = True
+        self.evaluate_during_training = True

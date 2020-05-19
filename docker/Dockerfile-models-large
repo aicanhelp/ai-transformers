@@ -10,7 +10,7 @@ WORKDIR /app/transformersx
 RUN rm -rf *
 
 # Copy as early as possible so we can cache ...
-COPY . .
+COPY .. .
 
 RUN pip install -r requirements.txt --no-cache-dir
 
