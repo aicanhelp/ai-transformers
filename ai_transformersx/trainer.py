@@ -330,6 +330,7 @@ class Trainer:
                 and os.path.isfile(os.path.join(model_path, "scheduler.pt"))
         ):
             # Load in optimizer and scheduler states
+            logger.info("Loading optimizer and scheduler from :" + model_path)
             optimizer.load_state_dict(torch.load(os.path.join(model_path, "optimizer.pt")))
             scheduler.load_state_dict(torch.load(os.path.join(model_path, "scheduler.pt")))
 
@@ -502,7 +503,7 @@ class Trainer:
         for k, v in inputs.items():
             inputs[k] = v.to(self.args.device)
 
-        outputs = model(**inputs)
+        outputs = model(**inputs, labels=inputs.labels)
         loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
 
         if self.args.n_gpu > 1:
@@ -680,15 +681,15 @@ class Trainer:
 
         for inputs in tqdm(dataloader, desc=description):
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
-
+            newInputs = {}
             for k, v in inputs.items():
                 if k != 'guid':
-                    inputs[k] = v.to(self.args.device)
+                    newInputs[k] = v.to(self.args.device)
                 else:
                     guids.append(v)
 
             with torch.no_grad():
-                outputs = model(**inputs)
+                outputs = model(**newInputs)
                 if has_labels:
                     step_eval_loss, logits = outputs[:2]
                     eval_losses += [step_eval_loss.mean().item()]

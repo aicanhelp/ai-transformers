@@ -44,6 +44,7 @@ class TaskModel:
     def _init(self):
         self._model_args.validate()
         log.info("The model_path is made as: " + str(self.model_path))
+
         self.config = AutoConfig.from_pretrained(
             self.model_path,
             num_labels=self._model_args.num_labels

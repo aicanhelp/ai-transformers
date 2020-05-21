@@ -58,8 +58,8 @@ class TrainingArguments:
         default=True, metadata={"help": "Run evaluation during training at each logging step."},
     )
 
-    per_gpu_train_batch_size: int = field(default=8, metadata={"help": "Batch size per GPU/CPU for training."})
-    per_gpu_eval_batch_size: int = field(default=8, metadata={"help": "Batch size per GPU/CPU for evaluation."})
+    per_gpu_train_batch_size: int = field(default=16, metadata={"help": "Batch size per GPU/CPU for training."})
+    per_gpu_eval_batch_size: int = field(default=16, metadata={"help": "Batch size per GPU/CPU for evaluation."})
     gradient_accumulation_steps: int = field(
         default=1,
         metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
