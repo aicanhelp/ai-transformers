@@ -1,8 +1,8 @@
 import os
 import sys
-from typing import Optional, Tuple
+from typing import Optional
 
-from dataclasses import dataclass, fields, field
+from dataclasses import field
 from ai_harness import harnessutils as aiutils
 from transformers import HfArgumentParser
 
@@ -73,6 +73,9 @@ class DataArguments:
             "help": "The maximum total input sequence length after tokenization. Sequences longer "
                     "than this will be truncated, sequences shorter will be padded."
         },
+    )
+    predict: bool = field(
+        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
     )
     overwrite_cache: bool = field(
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}

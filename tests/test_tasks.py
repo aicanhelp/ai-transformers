@@ -19,21 +19,24 @@ class TestDataProcessor(DataProcessor):
     def get_labels(self):
         return ['0', '1']
 
+    def data_dir(self):
+        return ""
+
 
 class Test_Task:
     def test_bert_default(self):
         task_args, _ = parse_args()
         task_args.model_args.model_base_dir = '../models/pretrained'
-        TransformerTask(task_args, TestDataProcessor).train()
+        TransformerTask(task_args, TestDataProcessor()).train()
 
     def test_bert_set1(self):
         task_args, _ = parse_args()
         task_args.model_args.model_base_dir = '../models/pretrained'
-        TransformerTask(task_args, TestDataProcessor, Base.Bert.bert).train()
+        TransformerTask(task_args, TestDataProcessor(), Base.Bert.bert).train()
 
     def test_bert_set2(self):
         task_args, _ = parse_args()
 
         task_args.model_args.model_base_dir = '../models/pretrained'
         task_args.model_args.model_name = 'Base.Bert.bert'
-        TransformerTask(task_args, TestDataProcessor, Base.Bert.bert).train()
+        TransformerTask(task_args, TestDataProcessor(), Base.Bert.bert).train()

@@ -9,13 +9,15 @@ from ai_transformersx.dataset import TaskDataset
 import numpy as np
 import torch
 from ai_harness.fileutils import join_path
-from transformers import AutoConfig, AutoTokenizer, Trainer, EvalPrediction, \
+from transformers import AutoConfig, AutoTokenizer, EvalPrediction, \
     PreTrainedModel
 from transformers.data.metrics import acc_and_f1
 
 from ai_transformersx.configuration import ModelArguments, DataArguments, log, Model_Mode, TaskArguments, parse_args
 from ai_transformersx.models import Model_Tools, Model
 from ai_transformersx import models
+from ai_transformersx.trainer import Trainer
+from ai_transformersx.trainer_utils import PredictionOutput
 from ai_transformersx.training_args import TrainingArguments
 
 
@@ -130,10 +132,10 @@ class TaskTrainer:
 
     def _check_train_args(self):
         if (
-                os.path.exists(self._training_args.output_dir)
-                and os.listdir(self._training_args.output_dir)
-                and self._training_args.do_train
+                self._training_args.do_train
                 and not self._training_args.overwrite_output_dir
+                and os.path.exists(self._training_args.output_dir)
+                and os.listdir(self._training_args.output_dir)
         ):
             raise ValueError(
                 f"Output directory ({self._training_args.output_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
@@ -184,6 +186,9 @@ class TaskTrainer:
                 results.update(result)
         return results
 
+    def predict(self) -> PredictionOutput:
+        return self._trainer.predict(test_dataset=self._taskData.eval_data())
+
 
 class TransformerTask:
     def __init__(self, task_args: TaskArguments,
@@ -195,9 +200,9 @@ class TransformerTask:
         self.task_args.training_args.validate()
         self._taskModel = TaskModel(task_args.model_args, model_class)
         self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessor,
-                                  task_args.training_args.local_rank) if task_args.training_args.do_train else None
+                                  task_args.training_args.local_rank)
         self._taskTrainer = TaskTrainer(task_args.training_args, self._taskModel,
-                                        self._taskData, compute_metric) if task_args.training_args.do_train else None
+                                        self._taskData, compute_metric)
         self._training_args = task_args.training_args
 
     def _log_task_start(self):
@@ -221,8 +226,11 @@ class TransformerTask:
         results = self._taskTrainer.train().eval()
         return results
 
-    def predict(self, *input):
+    def single_predict(self, *input):
         return self._taskModel.model(*input)
+
+    def predict(self) -> PredictionOutput:
+        return self._taskTrainer.predict()
 
 
 class DefaultTask(TransformerTask):

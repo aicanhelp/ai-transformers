@@ -4,12 +4,14 @@ import time
 import torch
 from torch.utils.data import Dataset
 from tqdm.notebook import tqdm
-from transformers import InputFeatures, PreTrainedTokenizer, torch_distributed_zero_first, \
-    RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer, InputExample
+from transformers import PreTrainedTokenizer, torch_distributed_zero_first, \
+    RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer
 from typing import List, Optional, Union
 
 from ai_transformersx.configuration import DataArguments, log
 from ai_transformersx.dataprocessor import DataProcessor
+
+from ai_transformersx.trainer_utils import InputFeatures, InputExample
 
 
 ###TODO: The Dataset should be refactored for many data sources
@@ -30,21 +32,24 @@ class TaskDataset(Dataset):
             processor: DataProcessor,
             limit_length: Optional[int] = None,
             evaluate=False,
-            local_rank=-1,
+            local_rank=-1
     ):
         self.args = args
         # Load data features from cache or dataset file
-        cached_features_file = os.path.join(
-            processor.data_dir(),
-            "cached_{}_{}_{}_{}".format(
-                "dev" if evaluate else "train", tokenizer.__class__.__name__, str(args.max_seq_length), args.task_name,
-            ),
-        )
+        cached_features_file = None
+        if not args.predict:
+            cached_features_file = os.path.join(
+                processor.data_dir(),
+                "cached_{}_{}_{}_{}".format(
+                    "dev" if evaluate else "train", tokenizer.__class__.__name__, str(args.max_seq_length),
+                    args.task_name,
+                ),
+            )
         with torch_distributed_zero_first(local_rank):
             # Make sure only the first process in distributed training processes the dataset,
             # and the others will use the cache.
 
-            if os.path.exists(cached_features_file) and not args.overwrite_cache:
+            if not args.predict and os.path.exists(cached_features_file) and not args.overwrite_cache:
                 start = time.time()
                 self.features = torch.load(cached_features_file)
                 log.info(
@@ -74,8 +79,10 @@ class TaskDataset(Dataset):
                     max_length=args.max_seq_length,
                     label_list=label_list,
                     output_mode=self.args.model_mode_for_data,
+                    progress_bar=args.progress_bar,
+                    evaluate=evaluate
                 )
-                if local_rank in [-1, 0]:
+                if not args.predict and local_rank in [-1, 0]:
                     log.info("Saving features into cached file %s", cached_features_file)
                     start = time.time()
                     torch.save(self.features, cached_features_file)
@@ -99,7 +106,8 @@ def _glue_convert_examples_to_features(
         task=None,
         label_list=None,
         output_mode=None,
-        progress_bar=False
+        progress_bar=False,
+        evaluate=False
 ):
     """
         Loads a data file into a list of ``InputFeatures``
@@ -138,18 +146,21 @@ def _glue_convert_examples_to_features(
 
     labels = [label_from_example(example) for example in examples]
 
+    log.info("1. Tokenizer encoding examples .... total: " + str(len(examples)))
     epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
-
     batch_encoding = tokenizer.batch_encode_plus(
         [(example.text_a, example.text_b) for example in epoch_iterator], max_length=max_length, pad_to_max_length=True,
     )
 
+    log.info("2. Converting Examples to Features .... total: " + str(len(examples)))
     epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
     features = []
-    for i in range(len(epoch_iterator)):
+
+    for i, example in enumerate(epoch_iterator):
         inputs = {k: batch_encoding[k][i] for k in batch_encoding}
 
-        feature = InputFeatures(**inputs, label=labels[i])
+        feature = InputFeatures(**inputs, label=labels[i], guid=i if evaluate else None)
+
         features.append(feature)
 
     for i, example in enumerate(examples[:5]):
