@@ -110,7 +110,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+*.local
+cached_*
 # Spyder project settings
 .spyderproject
 .spyproject
