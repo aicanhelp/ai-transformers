@@ -3,7 +3,7 @@ import time
 
 import torch
 from torch.utils.data import Dataset
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm, trange
 from transformers import PreTrainedTokenizer, torch_distributed_zero_first, \
     RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer
 from typing import List, Optional, Union
