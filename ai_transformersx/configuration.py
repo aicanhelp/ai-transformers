@@ -80,7 +80,7 @@ class DataArguments:
     overwrite_cache: bool = field(
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
     )
-    progress_bar: bool = field(default=False, metadata={"help": "Whether shows the progress_bar"})
+    progress_bar: bool = field(default=True, metadata={"help": "Whether shows the progress_bar"})
 
 
 @dataclass
