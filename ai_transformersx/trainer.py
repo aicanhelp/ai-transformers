@@ -407,6 +407,7 @@ class Trainer:
         for epoch in train_iterator:
             if self.args.max_steps == 0:
                 train_iterator.close()
+                self.global_step = 1
                 break
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
             for step, inputs in enumerate(epoch_iterator):
