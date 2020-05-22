@@ -54,6 +54,10 @@ class TaskModel:
 
         self.model = self._model(self.config)
 
+        parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
+        for param in parameters:
+            param.requires_grad = False
+
         log.info("num params:" + str(self.model.num_parameters()))
         log.info("num trainable params:" + str(self.model.num_parameters(only_trainable=True)))
 

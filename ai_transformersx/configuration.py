@@ -40,6 +40,7 @@ class ModelArguments:
 
     model_name: str = field(default="Base.Bert.bert",
                             metadata={"help": "the name of model: " + str(ALL_MODEL_NAMES)})
+    freeze_parameter: str = field(default="bert", metadata={"help": "The parameter name for freeze"})
 
     num_labels: str = field(default=2,
                             metadata={"help": "the number of label"})
