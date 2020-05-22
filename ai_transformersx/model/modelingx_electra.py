@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from transformers import ElectraPreTrainedModel, ElectraModel
 from transformers.file_utils import add_start_docstrings_to_callable
