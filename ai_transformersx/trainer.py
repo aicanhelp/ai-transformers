@@ -403,14 +403,13 @@ class Trainer:
         train_iterator = trange(
             epochs_trained, int(num_train_epochs), desc="Epoch", disable=not self.is_local_master()
         )
-        limit_step = 0
+
         for epoch in train_iterator:
+            if self.args.max_steps == 0:
+                train_iterator.close()
+                break
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
             for step, inputs in enumerate(epoch_iterator):
-                if self.args.num_train_step_limit > 0:
-                    limit_step = limit_step + 1
-                    if limit_step > self.args.num_train_step_limit:
-                        break
 
                 # Skip past any already trained steps if resuming training
                 if steps_trained_in_current_epoch > 0:
@@ -686,10 +685,10 @@ class Trainer:
 
         limit_step = 0
         for inputs in tqdm(dataloader, desc=description):
-            if self.args.num_eval_step_limit > 0:
-                limit_step = limit_step + 1
-                if limit_step > self.args.num_eval_step_limit:
-                    break
+            if self.args.eval_max_steps == 0 or (
+                    self.args.eval_max_steps > 0 and limit_step > self.args.eval_max_steps):
+                break
+            limit_step = limit_step + 1
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 

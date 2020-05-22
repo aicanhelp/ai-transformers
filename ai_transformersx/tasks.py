@@ -54,6 +54,9 @@ class TaskModel:
 
         self.model = self._model(self.config)
 
+        log.info("num params:", self.model.num_parameters())
+        log.info("num trainable params:", self.model.num_parameters(only_trainable=True))
+
     def _model(self, config):
         model_class = self._get_model_class()
         log.info("Loaded the model class: " + str(model_class))

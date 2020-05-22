@@ -8,6 +8,8 @@ from transformers import PreTrainedTokenizer, torch_distributed_zero_first, \
     RobertaTokenizer, RobertaTokenizerFast, XLMRobertaTokenizer
 from typing import List, Optional, Union
 
+from transformers.tokenization_utils import BatchEncoding
+
 from ai_transformersx.configuration import DataArguments, log
 from ai_transformersx.dataprocessor import DataProcessor
 
@@ -146,11 +148,13 @@ def _glue_convert_examples_to_features(
 
     labels = [label_from_example(example) for example in examples]
 
-    log.info("1. Tokenizer encoding examples .... total: " + str(len(examples)))
-    epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
-    batch_encoding = tokenizer.batch_encode_plus(
-        [(example.text_a, example.text_b) for example in epoch_iterator], max_length=max_length, pad_to_max_length=True,
-    )
+    # log.info("1. Tokenizer encoding examples .... total: " + str(len(examples)))
+    # epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
+    # batch_encoding = tokenizer.batch_encode_plus(
+    #     [(example.text_a, example.text_b) for example in epoch_iterator], max_length=max_length, pad_to_max_length=True,
+    # )
+
+    batch_encoding = batch_encode_plus(tokenizer, examples, max_length, progress_bar)
 
     log.info("2. Converting Examples to Features .... total: " + str(len(examples)))
     epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
@@ -169,3 +173,34 @@ def _glue_convert_examples_to_features(
         log.info("features: %s" % features[i])
 
     return features
+
+
+def batch_encode_plus(tokenizer, examples, max_length, progress_bar=False):
+    log.info("1. Tokenizer encoding examples .... total: " + str(len(examples)))
+    total = len(examples)
+    step = total / 100
+    epoch_iterator = tqdm(range(0, total, 100), desc="Iteration", disable=not progress_bar)
+
+    batch_outputs = {}
+    for step in epoch_iterator:
+        batch_encoding = tokenizer.batch_encode_plus(
+            [(example.text_a, example.text_b) for example in examples[step:step + 100]], max_length=max_length,
+            pad_to_max_length=True,
+        )
+
+        for key, value in batch_encoding.items():
+            if key not in batch_outputs:
+                batch_outputs[key] = []
+            batch_outputs[key].append(value)
+
+    batch_encoding = tokenizer.batch_encode_plus(
+        [(example.text_a, example.text_b) for example in examples[step:total]], max_length=max_length,
+        pad_to_max_length=True,
+    )
+
+    for key, value in batch_encoding.items():
+        if key not in batch_outputs:
+            batch_outputs[key] = []
+        batch_outputs[key].append(value)
+
+    return BatchEncoding(batch_outputs)

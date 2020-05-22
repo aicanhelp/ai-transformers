@@ -71,11 +71,15 @@ class TrainingArguments:
     max_grad_norm: float = field(default=1.0, metadata={"help": "Max gradient norm."})
 
     num_train_epochs: float = field(default=3.0, metadata={"help": "Total number of training epochs to perform."})
-    num_train_step_limit: int = field(default=-1, metadata={"help": "the max train step"})
-    num_eval_step_limit: int = field(default=-1, metadata={"help": "the max eval step"})
+
     max_steps: int = field(
         default=-1,
         metadata={"help": "If > 0: set total number of training steps to perform. Override num_train_epochs."},
+    )
+
+    eval_max_steps: int = field(
+        default=-1,
+        metadata={"help": "If > 0: set total number of training steps to perform."},
     )
     warmup_steps: int = field(default=0, metadata={"help": "Linear warmup over warmup_steps."})
 
