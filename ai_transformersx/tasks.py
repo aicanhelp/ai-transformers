@@ -54,7 +54,12 @@ class TaskModel:
 
         self.model = self._model(self.config)
 
+        log.info(
+            "Loaded task model, config: {}, tokenizer: {}, model: {} ".format(type(self.config), type(self.tokenizer),
+                                                                              type(self.model)))
+
         parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
+
         for param in parameters:
             param.requires_grad = False
 
@@ -63,7 +68,6 @@ class TaskModel:
 
     def _model(self, config):
         model_class = self._get_model_class()
-        log.info("Loaded the model class: " + str(model_class))
 
         return model_class.from_pretrained(
             self.model_path,
@@ -85,12 +89,13 @@ class TaskModel:
     def _get_model_class(self):
         if isinstance(self._model_class, PreTrainedModel):
             return self._model_class
-        model_class = models.model_class(self.config, self._model_args.model_type)
+        model_class = models.model_class(self.config, self._model_args.model_task_type)
         if not model_class:
             if not self._model_class:
                 raise ValueError(
-                    "Cannot find the model class for model type {} and config {}.".format(self._model_args.model_type,
-                                                                                          self._model_args.model_path)
+                    "Cannot find the model class for model type {} and config {}.".format(
+                        self._model_args.model_task_type,
+                        self._model_args.model_path)
                 )
         return model_class
 

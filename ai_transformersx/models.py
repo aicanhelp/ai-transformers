@@ -47,17 +47,6 @@ class Model_Size:
 
 MODEL_SIZE_NAMES = [f.name for f in fields(Model_Size)]
 
-
-@dataclass
-class Model_Class:
-    bert: str = 'bert'
-    albert: str = 'albert'
-    roberta: str = 'roberta'
-    electra: str = 'electra'
-
-
-MODEL_CLASS_NAMES = [f.name for f in fields(Model_Class)]
-
 MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPINGX = MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING.setdefault(ElectraConfig,
                                                                                                   ElectraForSequenceClassification
                                                                                                   )
@@ -72,11 +61,11 @@ all_model_mappings = OrderedDict([(Model_Task_Type.base, MODEL_MAPPING),
                                   ])
 
 
-def model_class(config, model_type):
-    mapping = all_model_mappings.get(model_type)
+def model_class(config, model_task_type):
+    mapping = all_model_mappings.get(model_task_type)
     if not mapping:
         raise ValueError(
-            "Cannot find the model class for model mode {}.".format(model_type)
+            "Cannot find the model class for model mode {}.".format(model_task_type)
         )
 
     for config_class, model_class in mapping.items():
