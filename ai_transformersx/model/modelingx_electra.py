@@ -80,13 +80,13 @@ class ElectraForSequenceClassification(ElectraPreTrainedModel):
         outputs = (logits,)
 
         if labels is not None:
-            if self.num_labels == 1:
+            if self.config.num_labels == 1:
                 #  We are doing regression
                 loss_fct = nn.MSELoss()
                 loss = loss_fct(logits.view(-1), labels.view(-1))
             else:
                 loss_fct = nn.CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+                loss = loss_fct(logits.view(-1, self.config.num_labels), labels.view(-1))
             outputs = (loss,) + outputs
 
         return outputs  # (loss), logits,

@@ -160,6 +160,9 @@ def _glue_convert_examples_to_features(
     epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
     features = []
 
+    for k in batch_encoding.keys():
+        log.info("key={},size={}".format(k, str(len(batch_encoding[k]))))
+
     for i, example in enumerate(epoch_iterator):
         inputs = {k: batch_encoding[k][i] for k in batch_encoding}
 
@@ -178,7 +181,6 @@ def _glue_convert_examples_to_features(
 def batch_encode_plus(tokenizer, examples, max_length, progress_bar=False):
     log.info("1. Tokenizer encoding examples .... total: " + str(len(examples)))
     total = len(examples)
-    step = total / 100
     epoch_iterator = tqdm(range(0, total, 100), desc="Iteration", disable=not progress_bar)
 
     batch_outputs = {}
@@ -191,16 +193,6 @@ def batch_encode_plus(tokenizer, examples, max_length, progress_bar=False):
         for key, value in batch_encoding.items():
             if key not in batch_outputs:
                 batch_outputs[key] = []
-            batch_outputs[key].append(value)
-
-    batch_encoding = tokenizer.batch_encode_plus(
-        [(example.text_a, example.text_b) for example in examples[step:total]], max_length=max_length,
-        pad_to_max_length=True,
-    )
-
-    for key, value in batch_encoding.items():
-        if key not in batch_outputs:
-            batch_outputs[key] = []
-        batch_outputs[key].append(value)
+            batch_outputs[key].extend(value)
 
     return BatchEncoding(batch_outputs)
