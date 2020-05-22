@@ -403,9 +403,14 @@ class Trainer:
         train_iterator = trange(
             epochs_trained, int(num_train_epochs), desc="Epoch", disable=not self.is_local_master()
         )
+        limit_step = 0
         for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
             for step, inputs in enumerate(epoch_iterator):
+                if self.args.num_train_step_limit > 0:
+                    limit_step = limit_step + 1
+                    if limit_step > self.args.num_train_step_limit:
+                        break
 
                 # Skip past any already trained steps if resuming training
                 if steps_trained_in_current_epoch > 0:
@@ -679,7 +684,13 @@ class Trainer:
         guids = []
         model.eval()
 
+        limit_step = 0
         for inputs in tqdm(dataloader, desc=description):
+            if self.args.num_eval_step_limit > 0:
+                limit_step = limit_step + 1
+                if limit_step > self.args.num_eval_step_limit:
+                    break
+
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
             for k, v in inputs.items():
@@ -706,6 +717,10 @@ class Trainer:
                         label_ids = inputs["labels"].detach().cpu().numpy()
                     else:
                         label_ids = np.append(label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
+            if limit_step == 1:
+                logger.info(inputs)
+                logger.info(preds)
+                logger.info(label_ids)
 
         if is_tpu_available() and preds is not None and label_ids is not None:
             # tpu-comment: Get all predictions and labels from all worker shards of eval dataset
