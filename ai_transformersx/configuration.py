@@ -4,7 +4,7 @@ from typing import Optional
 
 from dataclasses import field
 from ai_harness import harnessutils as aiutils
-from transformers import HfArgumentParser
+from transformers import HfArgumentParser, CONFIG_MAPPING
 
 from ai_transformersx.training_args import TrainingArguments
 from ai_transformersx.models import *
@@ -31,15 +31,20 @@ class ModelArguments:
     model_base_dir: str = field(default="./models/pretrained",
                                 metadata={"help": "the path base dir of models"})
 
-    model_type: str = field(default="seq_cls",
+    model_type: str = field(default="bert",
                             metadata={
-                                "help": "the type of model: " + str(MODEL_TYPE_NAMES)})
+                                "help": "the type of model: " + str(CONFIG_MAPPING.keys())})
+
+    model_task_type: str = field(default="seq_cls",
+                                 metadata={
+                                     "help": "the task type of model: " + str(MODEL_TASK_TYPE_NAMES)})
 
     model_mode: str = field(default="classification",
                             metadata={"help": "the model of model: " + str(MODEL_MODEL_NAMES)})
 
     model_name: str = field(default="Base.Bert.bert",
                             metadata={"help": "the name of model: " + str(ALL_MODEL_NAMES)})
+
     freeze_parameter: str = field(default="bert", metadata={"help": "The parameter name for freeze"})
 
     num_labels: str = field(default=2,
