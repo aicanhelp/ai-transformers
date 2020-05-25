@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from ai_transformersx.configuration import parse_args, TaskArguments
+from ai_transformersx.legacy.configuration import parse_args, TaskArguments
 
 
 @dataclass

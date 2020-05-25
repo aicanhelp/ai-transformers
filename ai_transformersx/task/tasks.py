@@ -3,22 +3,21 @@ import os
 import random
 from typing import Dict
 
-from ai_transformersx.dataprocessor import DataProcessor
-
-from ai_transformersx.dataset import TaskDataset
 import numpy as np
 import torch
 from ai_harness.fileutils import join_path
-from transformers import AutoConfig, AutoTokenizer, EvalPrediction, \
-    PreTrainedModel
 from transformers.data.metrics import acc_and_f1
 
-from ai_transformersx.configuration import ModelArguments, DataArguments, log, Model_Mode, TaskArguments, parse_args
-from ai_transformersx.models import Model_Tools, Model
-from ai_transformersx import models
-from ai_transformersx.trainer import Trainer
-from ai_transformersx.trainer_utils import PredictionOutput
-from ai_transformersx.training_args import TrainingArguments
+from ai_transformersx.model import ModelMode, task_model
+from ai_transformersx.model.model_args import ModelArguments
+from ai_transformersx.task.task_args import TaskArguments, parse_args
+from ai_transformersx.train.trainer import Trainer
+from ai_transformersx.train.trainer_utils import PredictionOutput, EvalPrediction
+from ai_transformersx.train.training_args import TrainingArguments
+from ai_transformersx.data import DataArguments, TaskDataset, DataProcessor
+from ai_harness import harnessutils as aiutils
+
+log = aiutils.getLogger('task')
 
 
 def set_seed(seed: int):
@@ -37,22 +36,15 @@ def set_seed(seed: int):
 class TaskModel:
     def __init__(self, modelArgs: ModelArguments, model_class=None):
         self._model_args = modelArgs
-        self._model_class = model_class if model_class else modelArgs.model_name
-        self.model_path = self._make_model_path()
+        self._user_model_class = model_class
         self._init()
 
     def _init(self):
         self._model_args.validate()
-        log.info("The model_path is made as: " + str(self.model_path))
+        self.task_model = self._build_task_model(self._model_args, self._user_model_class)
+        log.info("Loading the task model: " + str(self.task_model))
 
-        self.config = AutoConfig.from_pretrained(
-            self.model_path,
-            num_labels=self._model_args.num_labels
-        )
-
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
-
-        self.model = self._model(self.config)
+        self.config, self.tokenizer, self.model = self.task_model.load(num_labels=self._model_args.num_labels)
 
         log.info(
             "Loaded task model, config: {}, tokenizer: {}, model: {} ".format(type(self.config), type(self.tokenizer),
@@ -66,43 +58,28 @@ class TaskModel:
         log.info("num params:" + str(self.model.num_parameters()))
         log.info("num trainable params:" + str(self.model.num_parameters(only_trainable=True)))
 
-    def _model(self, config):
-        model_class = self._get_model_class()
+        log.info("Model Parameters Details: ")
+        for name, param in self.model.named_parameters():
+            log.info("{}:{}".format(name, param.size()))
 
-        return model_class.from_pretrained(
-            self.model_path,
-            config=config
-        )
+    def _build_task_model(self, modelArgs, model_class=None):
+        t_model = task_model(modelArgs.model_type,
+                             modelArgs.model_name, modelArgs.model_task_type,
+                             modelArgs.tokenizer_type,
+                             modelArgs.language)
 
-    def _make_model_path(self):
-        if self._model_args.model_path:
-            return join_path(self._model_args.model_base_dir, self._model_args.model_path)
-
-        if isinstance(self._model_class, Model):
-            return join_path(self._model_args.model_base_dir, self._model_class.path)
-
-        if isinstance(self._model_class, str):
-            return join_path(self._model_args.model_base_dir, Model_Tools.model_by(self._model_class).path)
-
-        raise ValueError("Cannot get model path.")
-
-    def _get_model_class(self):
-        if isinstance(self._model_class, PreTrainedModel):
-            return self._model_class
-        model_class = models.model_class(self.config, self._model_args.model_task_type)
+        # use the custom class to replace the model Class
         if not model_class:
-            if not self._model_class:
-                raise ValueError(
-                    "Cannot find the model class for model type {} and config {}.".format(
-                        self._model_args.model_task_type,
-                        self._model_args.model_path)
-                )
-        return model_class
+            t_model.model_class = model_class
+
+        t_model.model_path = join_path(self._model_args.model_base_dir, t_model.model_path)
+
+        return t_model
 
     def compute_metrics(self, p: EvalPrediction) -> Dict:
-        if self._model_args.model_mode == Model_Mode.classification:
+        if self._model_args.model_mode == ModelMode.classification:
             preds = np.argmax(p.predictions, axis=1)
-        elif self._model_args.model_mode == Model_Mode.regression:
+        elif self._model_args.model_mode == ModelMode.regression:
             preds = np.squeeze(p.predictions)
         return acc_and_f1(preds, p.label_ids)
 
@@ -167,7 +144,7 @@ class TaskTrainer:
         if self._training_args.do_train:
             # Here, the model_path is for the trainer to load the optimizer and scheduler states
             self._trainer.train(
-                model_path=self._taskModel.model_path
+                model_path=self._taskModel.task_model.model_path
             )
             self._trainer.save_model()
             # For convenience, we also re-save the tokenizer to the same directory,

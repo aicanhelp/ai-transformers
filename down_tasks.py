@@ -4,8 +4,8 @@ from ai_harness.executors import QueueExecutor
 from ai_harness.fileutils import join_path
 from transformers import AutoConfig, AutoTokenizer, AutoModel
 
-from ai_transformersx.configuration import log
-from ai_transformersx.models import Model_Tools
+from ai_transformersx.legacy.configuration import log
+from ai_transformersx.legacy.models import Model_Tools
 
 
 @configclass()

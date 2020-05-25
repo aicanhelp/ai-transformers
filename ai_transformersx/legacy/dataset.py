@@ -10,10 +10,10 @@ from typing import List, Optional, Union
 
 from transformers.tokenization_utils import BatchEncoding
 
-from ai_transformersx.configuration import DataArguments, log
-from ai_transformersx.dataprocessor import DataProcessor
+from .configuration import DataArguments, log
+from .dataprocessor import DataProcessor
 
-from ai_transformersx.trainer_utils import InputFeatures, InputExample
+from .trainer_utils import InputFeatures, InputExample
 
 
 ###TODO: The Dataset should be refactored for many data sources

@@ -6,8 +6,8 @@ from dataclasses import field
 from ai_harness import harnessutils as aiutils
 from transformers import HfArgumentParser, CONFIG_MAPPING
 
-from ai_transformersx.training_args import TrainingArguments
-from ai_transformersx.models import *
+from .training_args import TrainingArguments
+from .models import *
 
 log = aiutils.getLogger('task')
 

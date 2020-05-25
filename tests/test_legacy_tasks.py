@@ -1,10 +1,10 @@
 from transformers import InputExample
 
-from ai_transformersx.dataprocessor import DataProcessor
+from ai_transformersx.legacy.dataprocessor import DataProcessor
 
-from ai_transformersx.tasks import TransformerTask
-from ai_transformersx.configuration import parse_args
-from ai_transformersx.models import Base
+from ai_transformersx.legacy.tasks import TransformerTask
+from ai_transformersx.legacy.configuration import parse_args
+from ai_transformersx.legacy.models import Base
 
 
 class TestDataProcessor(DataProcessor):

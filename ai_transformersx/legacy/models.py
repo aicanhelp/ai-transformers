@@ -8,7 +8,7 @@ from transformers.modeling_auto import MODEL_FOR_MULTIPLE_CHOICE_MAPPING, \
     MODEL_FOR_TOKEN_CLASSIFICATION_MAPPING, MODEL_MAPPING, MODEL_WITH_LM_HEAD_MAPPING
 from ai_harness import harnessutils as utils
 
-from ai_transformersx.model.modelingx_electra import ElectraForSequenceClassification
+from ai_transformersx.model import ElectraForSequenceClassification
 
 log = utils.getLogger('task')
 
@@ -19,9 +19,11 @@ class Model_Task_Type:
     pretrain: str = 'pretrain'
     lm_head: str = 'lm_head'
     qa: str = 'qa'
+    qa_s: str = 'qa_s'
     seq_cls: str = 'seq_cls'
     token_cls: str = 'token_cls'
     multi_choice: str = 'multi_choice'
+    next_seq: str = 'next_seq'
 
 
 MODEL_TASK_TYPE_NAMES = [f.name for f in fields(Model_Task_Type)]
