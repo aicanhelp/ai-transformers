@@ -1,16 +1,90 @@
+import torch
 import torch.nn as nn
-from transformers import ElectraPreTrainedModel, ElectraModel
+from transformers import ElectraPreTrainedModel, ElectraConfig
 from transformers.file_utils import add_start_docstrings_to_callable
-from transformers.modeling_bert import BertPooler
-from transformers.modeling_electra import ELECTRA_INPUTS_DOCSTRING
+from transformers.modeling_bert import BertPooler, BertEncoder
+from transformers.modeling_electra import ELECTRA_INPUTS_DOCSTRING, ElectraEmbeddings
+
+
+class ElectraModelX(ElectraPreTrainedModel):
+    config_class = ElectraConfig
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.embeddings = ElectraEmbeddings(config)
+
+        if config.embedding_size != config.hidden_size:
+            self.embeddings_project = nn.Linear(config.embedding_size, config.hidden_size)
+
+        self.encoder = BertEncoder(config)
+        self.pooler = BertPooler(config)
+        self.config = config
+        self.init_weights()
+
+    def get_input_embeddings(self):
+        return self.embeddings.word_embeddings
+
+    def set_input_embeddings(self, value):
+        self.embeddings.word_embeddings = value
+
+    def _prune_heads(self, heads_to_prune):
+        """ Prunes heads of the model.
+            heads_to_prune: dict of {layer_num: list of heads to prune in this layer}
+            See base class PreTrainedModel
+        """
+        for layer, heads in heads_to_prune.items():
+            self.encoder.layer[layer].attention.prune_heads(heads)
+
+    @add_start_docstrings_to_callable(ELECTRA_INPUTS_DOCSTRING)
+    def forward(
+            self,
+            input_ids=None,
+            attention_mask=None,
+            token_type_ids=None,
+            position_ids=None,
+            head_mask=None,
+            inputs_embeds=None,
+    ):
+
+        if input_ids is not None and inputs_embeds is not None:
+            raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
+        elif input_ids is not None:
+            input_shape = input_ids.size()
+        elif inputs_embeds is not None:
+            input_shape = inputs_embeds.size()[:-1]
+        else:
+            raise ValueError("You have to specify either input_ids or inputs_embeds")
+
+        device = input_ids.device if input_ids is not None else inputs_embeds.device
+
+        if attention_mask is None:
+            attention_mask = torch.ones(input_shape, device=device)
+        if token_type_ids is None:
+            token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
+
+        extended_attention_mask = self.get_extended_attention_mask(attention_mask, input_shape, device)
+        head_mask = self.get_head_mask(head_mask, self.config.num_hidden_layers)
+
+        hidden_states = self.embeddings(
+            input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, inputs_embeds=inputs_embeds
+        )
+
+        if hasattr(self, "embeddings_project"):
+            hidden_states = self.embeddings_project(hidden_states)
+
+        hidden_states = self.encoder(hidden_states, attention_mask=extended_attention_mask, head_mask=head_mask)
+
+        sequence_output = hidden_states[0]
+        pooled_output = self.pooler(sequence_output)
+
+        return hidden_states, pooled_output
 
 
 class ElectraForSequenceClassification(ElectraPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
-        self.electra = ElectraModel(config)
-        self.pooler = BertPooler(config)
+        self.electra = ElectraModelX(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, config.num_labels)
         self.init_weights()
@@ -67,12 +141,9 @@ class ElectraForSequenceClassification(ElectraPreTrainedModel):
 
         """
 
-        discriminator_hidden_states = self.electra(
+        discriminator_hidden_states, pooled_output = self.electra(
             input_ids, attention_mask, token_type_ids, position_ids, head_mask, inputs_embeds
         )
-        discriminator_sequence_output = discriminator_hidden_states[0]
-
-        pooled_output = self.pooler(discriminator_sequence_output)
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
