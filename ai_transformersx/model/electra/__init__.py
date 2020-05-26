@@ -1,1 +1,1 @@
-from .modelingx_electra import ElectraForSequenceClassification
+from .modelingx_electra import ElectraForSequenceClassificationX

@@ -8,7 +8,7 @@ from transformers.modeling_auto import MODEL_FOR_MULTIPLE_CHOICE_MAPPING, \
     MODEL_FOR_TOKEN_CLASSIFICATION_MAPPING, MODEL_MAPPING, MODEL_WITH_LM_HEAD_MAPPING
 from ai_harness import harnessutils as utils
 
-from ai_transformersx.model import ElectraForSequenceClassification
+from ai_transformersx.model import ElectraForSequenceClassificationX
 
 log = utils.getLogger('task')
 
@@ -49,9 +49,7 @@ class Model_Size:
 
 MODEL_SIZE_NAMES = [f.name for f in fields(Model_Size)]
 
-MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPINGX = MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING.setdefault(ElectraConfig,
-                                                                                                  ElectraForSequenceClassification
-                                                                                                  )
+MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING.setdefault(ElectraConfig,ElectraForSequenceClassificationX)
 
 all_model_mappings = OrderedDict([(Model_Task_Type.base, MODEL_MAPPING),
                                   (Model_Task_Type.lm_head, MODEL_WITH_LM_HEAD_MAPPING),

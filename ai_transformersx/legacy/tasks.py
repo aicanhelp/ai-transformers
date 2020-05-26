@@ -58,10 +58,11 @@ class TaskModel:
             "Loaded task model, config: {}, tokenizer: {}, model: {} ".format(type(self.config), type(self.tokenizer),
                                                                               type(self.model)))
 
-        parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
+        if self._model_args.freeze_parameter:
+            parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
 
-        for param in parameters:
-            param.requires_grad = False
+            for param in parameters:
+                param.requires_grad = False
 
         log.info("num params:" + str(self.model.num_parameters()))
         log.info("num trainable params:" + str(self.model.num_parameters(only_trainable=True)))
@@ -241,6 +242,12 @@ class TransformerTask:
 
         set_seed(self._training_args.seed)
         results = self._taskTrainer.train().eval()
+        return results
+
+    def eval(self):
+        self._log_task_start()
+        set_seed(self._training_args.seed)
+        results = self._taskTrainer.eval()
         return results
 
     def single_predict(self, *input):

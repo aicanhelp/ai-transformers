@@ -3,7 +3,7 @@ from collections import OrderedDict
 from transformers.modeling_electra import ElectraConfig, ElectraModel, ElectraForMaskedLM, ElectraForPreTraining, \
     ElectraDiscriminatorPredictions, ElectraForTokenClassification, ElectraGeneratorPredictions
 from transformers.tokenization_electra import ElectraTokenizer, ElectraTokenizerFast
-from .modelingx_electra import ElectraForSequenceClassification
+from .modelingx_electra import ElectraForSequenceClassificationX
 
 from ai_transformersx.model.model_utils import TaskModels, ModelType, ModelTaskType
 
@@ -21,7 +21,7 @@ class Electra_Task_Models(TaskModels):
         (ModelTaskType.base, ElectraModel),
         (ModelTaskType.pretrain, ElectraForPreTraining),
         (ModelTaskType.lm_head, ElectraForMaskedLM),
-        (ModelTaskType.seq_cls, ElectraForSequenceClassification),
+        (ModelTaskType.seq_cls, ElectraForSequenceClassificationX),
         (ModelTaskType.token_cls, ElectraForTokenClassification)
     ])
     TOKENIZERS = OrderedDict([

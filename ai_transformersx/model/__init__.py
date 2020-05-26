@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from .electra.modelingx_electra import ElectraForSequenceClassification
+from .electra.modelingx_electra import ElectraForSequenceClassificationX
 from .bert.models import Bert_Task_Models
 from .albert.models import Albert_Task_Models
 from .electra.models import Electra_Task_Models

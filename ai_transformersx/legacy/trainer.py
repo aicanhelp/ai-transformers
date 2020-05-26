@@ -721,6 +721,8 @@ class Trainer:
                 logger.info(inputs)
                 logger.info(preds)
                 logger.info(label_ids)
+            else:
+                limit_step = limit_step + 1
 
         if is_tpu_available() and preds is not None and label_ids is not None:
             # tpu-comment: Get all predictions and labels from all worker shards of eval dataset
