@@ -633,7 +633,7 @@ class Trainer:
         """
         eval_dataloader = self.get_eval_dataloader(eval_dataset)
 
-        output = self._prediction_loop(eval_dataloader, description="Evaluation",max_steps=max_steps)
+        output = self._prediction_loop(eval_dataloader, description="Evaluation", max_steps=max_steps)
 
         self._log(output.metrics)
 
@@ -686,8 +686,7 @@ class Trainer:
 
         limit_step = 0
         for inputs in tqdm(dataloader, desc=description):
-            if max_steps == 0 or (
-                    max_steps > 0 and limit_step > max_steps):
+            if max_steps == 0 or (0 < max_steps < limit_step):
                 break
             limit_step = limit_step + 1
 
@@ -717,6 +716,7 @@ class Trainer:
                         label_ids = inputs["labels"].detach().cpu().numpy()
                     else:
                         label_ids = np.append(label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
+
             if limit_step == 1:
                 logger.info(inputs)
                 logger.info(preds)

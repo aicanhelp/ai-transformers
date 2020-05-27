@@ -687,8 +687,9 @@ class Trainer:
         limit_step = 0
         for inputs in tqdm(dataloader, desc=description):
             if max_steps == 0 or (
-                    max_steps > 0 and limit_step > max_steps):
+                    0 < max_steps < limit_step):
                 break
+            limit_step = limit_step + 1
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
@@ -721,8 +722,6 @@ class Trainer:
                 logger.info(inputs)
                 logger.info(preds)
                 logger.info(label_ids)
-            else:
-                limit_step = limit_step + 1
 
         if is_tpu_available() and preds is not None and label_ids is not None:
             # tpu-comment: Get all predictions and labels from all worker shards of eval dataset
