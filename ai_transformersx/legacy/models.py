@@ -49,7 +49,7 @@ class Model_Size:
 
 MODEL_SIZE_NAMES = [f.name for f in fields(Model_Size)]
 
-MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING.setdefault(ElectraConfig,ElectraForSequenceClassificationX)
+# MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING[ElectraConfig] = ElectraForSequenceClassificationX
 
 all_model_mappings = OrderedDict([(Model_Task_Type.base, MODEL_MAPPING),
                                   (Model_Task_Type.lm_head, MODEL_WITH_LM_HEAD_MAPPING),

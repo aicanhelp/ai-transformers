@@ -6,7 +6,8 @@ from typing import Dict
 import numpy as np
 import torch
 from ai_harness.fileutils import join_path
-from transformers.data.metrics import acc_and_f1
+from sklearn.metrics import f1_score
+from transformers.data.metrics import acc_and_f1, simple_accuracy
 
 from ai_transformersx.model import ModelMode, task_model
 from ai_transformersx.model.model_args import ModelArguments
@@ -76,12 +77,21 @@ class TaskModel:
 
         return t_model
 
+    def _acc_and_f1(self, preds, labels):
+        acc = simple_accuracy(preds, labels)
+        f1 = f1_score(y_true=labels, y_pred=preds, average="weighted")
+        return {
+            "acc": acc,
+            "f1": f1,
+            "acc_and_f1": (acc + f1) / 2,
+        }
+
     def compute_metrics(self, p: EvalPrediction) -> Dict:
         if self._model_args.model_mode == ModelMode.classification:
             preds = np.argmax(p.predictions, axis=1)
         elif self._model_args.model_mode == ModelMode.regression:
             preds = np.squeeze(p.predictions)
-        return acc_and_f1(preds, p.label_ids)
+        return self._acc_and_f1(preds, p.label_ids)
 
 
 class TaskData:

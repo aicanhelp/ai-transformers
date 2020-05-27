@@ -3,6 +3,8 @@ import os
 import random
 from typing import Dict
 
+from sklearn.metrics import f1_score
+
 from .dataprocessor import DataProcessor
 
 from .dataset import TaskDataset
@@ -11,7 +13,7 @@ import torch
 from ai_harness.fileutils import join_path
 from transformers import AutoConfig, AutoTokenizer, EvalPrediction, \
     PreTrainedModel
-from transformers.data.metrics import acc_and_f1
+from transformers.data.metrics import simple_accuracy
 
 from .configuration import ModelArguments, DataArguments, log, Model_Mode, TaskArguments, parse_args
 from .models import Model_Tools, Model
@@ -104,12 +106,21 @@ class TaskModel:
                 )
         return model_class
 
+    def _acc_and_f1(self, preds, labels):
+        acc = simple_accuracy(preds, labels)
+        f1 = f1_score(y_true=labels, y_pred=preds, average="weighted")
+        return {
+            "acc": acc,
+            "f1": f1,
+            "acc_and_f1": (acc + f1) / 2,
+        }
+
     def compute_metrics(self, p: EvalPrediction) -> Dict:
         if self._model_args.model_mode == Model_Mode.classification:
             preds = np.argmax(p.predictions, axis=1)
         elif self._model_args.model_mode == Model_Mode.regression:
             preds = np.squeeze(p.predictions)
-        return acc_and_f1(preds, p.label_ids)
+        return self._acc_and_f1(preds, p.label_ids)
 
 
 class TaskData:

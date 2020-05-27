@@ -451,7 +451,7 @@ class Trainer:
                             self._log(logs)
 
                             if self.args.evaluate_during_training:
-                                self.evaluate()
+                                self.evaluate(max_steps=self.args.eval_max_steps)
 
                         if self.args.save_steps > 0 and self.global_step % self.args.save_steps == 0:
                             # In all cases (even distributed/parallel), self.model is always a reference
@@ -615,7 +615,7 @@ class Trainer:
             shutil.rmtree(checkpoint)
 
     def evaluate(
-            self, eval_dataset: Optional[Dataset] = None, prediction_loss_only: Optional[bool] = None,
+            self, eval_dataset: Optional[Dataset] = None, prediction_loss_only: Optional[bool] = None, max_steps=-1
     ) -> Dict[str, float]:
         """
         Run evaluation and return metrics.
@@ -633,7 +633,7 @@ class Trainer:
         """
         eval_dataloader = self.get_eval_dataloader(eval_dataset)
 
-        output = self._prediction_loop(eval_dataloader, description="Evaluation")
+        output = self._prediction_loop(eval_dataloader, description="Evaluation", max_steps=max_steps)
 
         self._log(output.metrics)
 
@@ -654,7 +654,7 @@ class Trainer:
         return self._prediction_loop(test_dataloader, description="Prediction")
 
     def _prediction_loop(
-            self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None
+            self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None, max_steps=-1
     ) -> PredictionOutput:
         """
         Prediction/evaluation loop, shared by `evaluate()` and `predict()`.
@@ -686,10 +686,9 @@ class Trainer:
 
         limit_step = 0
         for inputs in tqdm(dataloader, desc=description):
-            if self.args.eval_max_steps == 0 or (
-                    self.args.eval_max_steps > 0 and limit_step > self.args.eval_max_steps):
+            if max_steps == 0 or (
+                    max_steps > 0 and limit_step > max_steps):
                 break
-            limit_step = limit_step + 1
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
@@ -717,6 +716,7 @@ class Trainer:
                         label_ids = inputs["labels"].detach().cpu().numpy()
                     else:
                         label_ids = np.append(label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
+
             if limit_step == 1:
                 logger.info(inputs)
                 logger.info(preds)
