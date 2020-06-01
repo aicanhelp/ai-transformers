@@ -60,7 +60,7 @@ class TaskModel:
             "Loaded task model, config: {}, tokenizer: {}, model: {} ".format(type(self.config), type(self.tokenizer),
                                                                               type(self.model)))
 
-        if self._model_args.freeze_parameter:
+        if self._model_args.freeze_parameter and self._model_args.freeze_parameter != 'none':
             parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
 
             for param in parameters:

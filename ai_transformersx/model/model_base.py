@@ -58,10 +58,14 @@ class TaskModel:
             num_labels=kwargs['num_labels']
         )
         tokenizer = self.tokenizer.from_pretrained(self.model_path)
-        model = self.model_class.from_pretrained(
-            self.model_path,
-            config=config
-        )
+        unit_test = kwargs['num_labels']
+        if not unit_test:
+            model = self.model_class.from_pretrained(
+                self.model_path,
+                config=config
+            )
+        else:
+            model = None
         return config, tokenizer, model
 
 
@@ -72,14 +76,21 @@ class TaskModels:
     TOKENIZERS = {}
     CONFIG = None
 
-    def _model_class(self, model_path, model_task_type, tokenizer_name='default', language='cn'):
+    def _model_class(self, model_path, model_task_type, tokenizer_name='default', language='cn',
+                     ignore_not_exists=False):
         if not model_path in self.MODEL_PATHS[language]:
-            raise ValueError("Cannot find the model path {} for language {},model_type={}".format(model_path, language,
-                                                                                                  self.MODEL_TYPE))
+            if not ignore_not_exists:
+                raise ValueError(
+                    "Cannot find the model path {} for language {},model_type={}".format(model_path, language,
+                                                                                         self.MODEL_TYPE))
+            return None
+
         tokenizer = self.TOKENIZERS[tokenizer_name]
         if not tokenizer:
-            raise ValueError(
-                "Cannot find the tokenizer with name {},model_type={}.".format(tokenizer_name, self.MODEL_TYPE))
+            if not ignore_not_exists:
+                raise ValueError(
+                    "Cannot find the tokenizer with name {},model_type={}.".format(tokenizer_name, self.MODEL_TYPE))
+            return None
 
         model_class = self.MODEL_CLASSES[model_task_type]
         if not model_class:
@@ -88,10 +99,13 @@ class TaskModels:
 
         return model_class, tokenizer
 
-    def all_base_models(self,language=None):
+    def all_base_models(self, language=None):
         pass
 
-
-    def task_model(self, model_path, model_task_type, tokenizer_name='default', language='cn') -> TaskModel:
+    def task_model(self, model_path, model_task_type, tokenizer_name='default', language='cn',
+                   ignore_not_exists=False) -> TaskModel:
+        model_cls = self._model_class(model_path, model_task_type, tokenizer_name, language, ignore_not_exists)
+        if not model_cls and ignore_not_exists:
+            return None
         return TaskModel(self.MODEL_TYPE, self.CONFIG, model_path,
-                         *self._model_class(model_path, model_task_type, tokenizer_name, language))
+                         *model_cls)

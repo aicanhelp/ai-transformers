@@ -5,20 +5,17 @@ from typing import Dict
 
 import numpy as np
 import torch
-from ai_harness.fileutils import join_path
 from sklearn.metrics import f1_score
-from transformers.data.metrics import acc_and_f1, simple_accuracy
+from transformers.data.metrics import simple_accuracy
 
-from ai_transformersx.model import ModelMode, task_model
-from ai_transformersx.model.model_args import ModelArguments
-from ai_transformersx.task.task_args import TaskArguments, parse_args
-from ai_transformersx.train.trainer import Trainer
-from ai_transformersx.train.trainer_utils import PredictionOutput, EvalPrediction
-from ai_transformersx.train.training_args import TrainingArguments
-from ai_transformersx.data import DataArguments, TaskDataset, DataProcessor
-from ai_harness import harnessutils as aiutils
-
-log = aiutils.getLogger('task')
+from ..model import ModelMode, task_model
+from ..model.model_args import ModelArguments
+from ..task.task_args import TaskArguments, parse_tasks_args
+from ..train.trainer import Trainer
+from ..train.trainer_utils import PredictionOutput, EvalPrediction
+from ..train.training_args import TrainingArguments
+from ..data import DataArguments, TaskDataset, DataProcessor
+from ..transformersx_base import aiutils, log, join_path
 
 
 def set_seed(seed: int):
@@ -41,16 +38,22 @@ class TaskModel:
         self._init()
 
     def _init(self):
-        self._model_args.validate()
         self.task_model = self._build_task_model(self._model_args, self._user_model_class)
         log.info("Loading the task model: " + str(self.task_model))
 
-        self.config, self.tokenizer, self.model = self.task_model.load(num_labels=self._model_args.num_labels)
+        self.config, self.tokenizer, self.model = self.task_model.load(
+            num_labels=self._model_args.num_labels,
+            unit_test=self._model_args.unit_test)
 
         log.info(
             "Loaded task model, config: {}, tokenizer: {}, model: {} ".format(type(self.config), type(self.tokenizer),
                                                                               type(self.model)))
 
+        self._freeze_parameters()
+
+    def _freeze_parameters(self):
+        if not self.model:
+            return
         parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
 
         for param in parameters:
@@ -64,10 +67,10 @@ class TaskModel:
             log.info("{}:{}".format(name, param.size()))
 
     def _build_task_model(self, modelArgs, model_class=None):
-        t_model = task_model(modelArgs.model_type,
-                             modelArgs.model_name, modelArgs.model_task_type,
-                             modelArgs.tokenizer_type,
-                             modelArgs.language)
+        t_model = task_model(model_path=modelArgs.model_name,
+                             model_task_type=modelArgs.model_task_type,
+                             tokenizer_name=modelArgs.tokenizer_type,
+                             language=modelArgs.language)
 
         # use the custom class to replace the model Class
         if not model_class:
@@ -226,6 +229,12 @@ class TransformerTask:
         results = self._taskTrainer.train().eval()
         return results
 
+    def eval(self):
+        self._log_task_start()
+        set_seed(self._training_args.seed)
+        results = self._taskTrainer.eval()
+        return results
+
     def single_predict(self, *input):
         return self._taskModel.model(*input)
 
@@ -235,4 +244,4 @@ class TransformerTask:
 
 class DefaultTask(TransformerTask):
     def __init__(self, dataProcessorClass, model_class=None, compute_metric=None):
-        super().__init__(parse_args(), dataProcessorClass, model_class, compute_metric)
+        super().__init__(parse_tasks_args(), dataProcessorClass, model_class, compute_metric)

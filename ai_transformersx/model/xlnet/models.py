@@ -4,7 +4,7 @@ from transformers.modeling_xlnet import XLNetConfig, XLNetModel, XLNetForMultipl
     XLNetForQuestionAnsweringSimple, XLNetForSequenceClassification, XLNetForTokenClassification, XLNetLMHeadModel
 from transformers.tokenization_xlnet import XLNetTokenizer
 
-from ai_transformersx.model.model_utils import TaskModels, ModelType, ModelTaskType
+from ..model_base import TaskModels, ModelType, ModelTaskType
 
 
 class XLNet_Task_Models(TaskModels):

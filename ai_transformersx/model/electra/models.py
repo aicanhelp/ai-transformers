@@ -5,7 +5,7 @@ from transformers.modeling_electra import ElectraConfig, ElectraModel, ElectraFo
 from transformers.tokenization_electra import ElectraTokenizer, ElectraTokenizerFast
 from .modelingx_electra import ElectraForSequenceClassificationX
 
-from ai_transformersx.model.model_utils import TaskModels, ModelType, ModelTaskType
+from ..model_base import TaskModels, ModelType, ModelTaskType
 
 
 class Electra_Task_Models(TaskModels):

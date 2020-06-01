@@ -4,7 +4,7 @@ from transformers.modeling_roberta import RobertaConfig, RobertaModel, RobertaFo
     RobertaForQuestionAnswering, RobertaForSequenceClassification, RobertaForTokenClassification
 from transformers.tokenization_roberta import RobertaTokenizer, RobertaTokenizerFast
 
-from ai_transformersx.model.model_utils import TaskModels, ModelType, ModelTaskType
+from ..model_base import TaskModels, ModelType, ModelTaskType
 
 
 class Roberta_Task_Models(TaskModels):

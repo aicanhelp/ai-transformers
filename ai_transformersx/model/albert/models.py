@@ -4,7 +4,7 @@ from transformers.modeling_albert import AlbertConfig, AlbertForMaskedLM, Albert
     AlbertForTokenClassification, AlbertPreTrainedModel, AlbertForSequenceClassification
 from transformers.tokenization_albert import AlbertTokenizer
 
-from ai_transformersx.model.model_utils import TaskModels, ModelType, ModelTaskType
+from ..model_base import TaskModels, ModelType, ModelTaskType
 
 
 class Albert_Task_Models(TaskModels):

@@ -212,7 +212,7 @@ class Trainer:
             eval_dataset,
             sampler=sampler,
             batch_size=self.args.eval_batch_size,
-            shuffle=False,
+            shuffle=False if sampler is not None else True,
             collate_fn=self.data_collator.collate_batch,
         )
 

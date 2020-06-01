@@ -1,11 +1,10 @@
-import dataclasses
-import json
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 from transformers import is_torch_available
 from transformers.file_utils import torch_required, cached_property
+
+from ..transformersx_base import *
 
 if is_torch_available():
     import torch
@@ -26,98 +25,60 @@ def is_tpu_available():
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@configclass
 class TrainingArguments:
-    """
-    TrainingArguments is the subset of the arguments we use in our example scripts
-    **which relate to the training loop itself**.
-
-    Using `HfArgumentParser` we can turn this class
-    into argparse arguments to be able to specify them on
-    the command line.
-    """
-
-    output_dir: str = field(default='models/finetuning',
-                            metadata={
-                                "help": "The output directory where the model predictions and checkpoints will be written."}
-                            )
+    output_dir: str = field('models/finetuning',
+                            "The output directory where the model predictions and checkpoints will be written.")
     overwrite_output_dir: bool = field(
-        default=False,
-        metadata={
-            "help": (
-                "Overwrite the content of the output directory."
-                "Use this to continue training if output_dir points to a checkpoint directory."
-            )
-        },
-    )
+        False, "Overwrite the content of the output directory."
+               "Use this to continue training if output_dir points to a checkpoint directory.")
 
-    do_train: bool = field(default=False, metadata={"help": "Whether to run training."})
-    do_eval: bool = field(default=False, metadata={"help": "Whether to run eval on the dev set."})
-    do_predict: bool = field(default=False, metadata={"help": "Whether to run predictions on the test set."})
-    evaluate_during_training: bool = field(
-        default=True, metadata={"help": "Run evaluation during training at each logging step."},
-    )
+    do_train: bool = field(False, "Whether to run training.")
+    do_eval: bool = field(False, "Whether to run eval on the dev set.")
+    do_predict: bool = field(False, "Whether to run predictions on the test set.")
+    evaluate_during_training: bool = field(True, "Run evaluation during training at each logging step.")
 
-    per_gpu_train_batch_size: int = field(default=16, metadata={"help": "Batch size per GPU/CPU for training."})
-    per_gpu_eval_batch_size: int = field(default=16, metadata={"help": "Batch size per GPU/CPU for evaluation."})
+    per_gpu_train_batch_size: int = field(16, "Batch size per GPU/CPU for training.")
+    per_gpu_eval_batch_size: int = field(16, "Batch size per GPU/CPU for evaluation.")
     gradient_accumulation_steps: int = field(
-        default=1,
-        metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
-    )
+        1, "Number of updates steps to accumulate before performing a backward/update pass.")
 
-    learning_rate: float = field(default=5e-5, metadata={"help": "The initial learning rate for Adam."})
-    weight_decay: float = field(default=0.0, metadata={"help": "Weight decay if we apply some."})
-    adam_epsilon: float = field(default=1e-8, metadata={"help": "Epsilon for Adam optimizer."})
-    max_grad_norm: float = field(default=1.0, metadata={"help": "Max gradient norm."})
+    learning_rate: float = field(5e-5, "The initial learning rate for Adam.")
+    weight_decay: float = field(0.0, "Weight decay if we apply some.")
+    adam_epsilon: float = field(1e-8, "Epsilon for Adam optimizer.")
+    max_grad_norm: float = field(1.0, "Max gradient norm.")
 
-    num_train_epochs: float = field(default=3.0, metadata={"help": "Total number of training epochs to perform."})
+    num_train_epochs: float = field(3.0, "Total number of training epochs to perform.")
 
     max_steps: int = field(
-        default=-1,
-        metadata={"help": "If > 0: set total number of training steps to perform. Override num_train_epochs."},
-    )
+        -1, "If > 0: set total number of training steps to perform. Override num_train_epochs.")
 
-    eval_max_steps: int = field(
-        default=-1,
-        metadata={"help": "If > 0: set total number of training steps to perform."},
-    )
-    warmup_steps: int = field(default=0, metadata={"help": "Linear warmup over warmup_steps."})
+    eval_max_steps: int = field(-1, "If > 0: set total number of training steps to perform.")
+    warmup_steps: int = field(0, "Linear warmup over warmup_steps.")
 
-    logging_dir: Optional[str] = field(default=None, metadata={"help": "Tensorboard log dir."})
-    logging_first_step: bool = field(default=False, metadata={"help": "Log and eval the first global_step"})
-    logging_steps: int = field(default=500, metadata={"help": "Log every X updates steps."})
-    save_steps: int = field(default=500, metadata={"help": "Save checkpoint every X updates steps."})
-    save_total_limit: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": (
-                "Limit the total amount of checkpoints."
-                "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints"
-            )
-        },
-    )
-    no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
-    seed: int = field(default=42, metadata={"help": "random seed for initialization"})
+    logging_dir: str = field(None, "Tensorboard log dir.")
+    logging_first_step: bool = field(False, "Log and eval the first global_step")
+    logging_steps: int = field(500, "Log every X updates steps.")
+    save_steps: int = field(500, "Save checkpoint every X updates steps.")
+    save_total_limit: int = field(
+        None,
+        "Limit the total amount of checkpoints."
+        "Deletes the older checkpoints in the output_dir. Default is unlimited checkpoints")
+    no_cuda: bool = field(False, "Do not use CUDA even when it is available")
+    seed: int = field(42, "random seed for initialization")
 
     fp16: bool = field(
-        default=False,
-        metadata={"help": "Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit"},
-    )
+        False,
+        "Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
     fp16_opt_level: str = field(
-        default="O1",
-        metadata={
-            "help": (
-                "For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
-                "See details at https://nvidia.github.io/apex/amp.html"
-            )
-        },
-    )
-    local_rank: int = field(default=-1, metadata={"help": "For distributed training: local_rank"})
+        "O1",
+        "For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
+        "See details at https://nvidia.github.io/apex/amp.html")
+    local_rank: int = field(-1, "For distributed training: local_rank")
 
     tpu_num_cores: Optional[int] = field(
-        default=None, metadata={"help": "TPU: Number of TPU cores (automatically passed by launcher script)"}
-    )
-    tpu_metrics_debug: bool = field(default=False, metadata={"help": "TPU: Whether to print debug metrics"})
+        None, "TPU: Number of TPU cores (automatically passed by launcher script)")
+    tpu_metrics_debug: bool = field(False, "TPU: Whether to print debug metrics")
 
     @property
     def train_batch_size(self) -> int:
@@ -159,22 +120,6 @@ class TrainingArguments:
     @torch_required
     def n_gpu(self):
         return self._setup_devices[1]
-
-    def to_json_string(self):
-        """
-        Serializes this instance to a JSON string.
-        """
-        return json.dumps(dataclasses.asdict(self), indent=2)
-
-    def to_sanitized_dict(self) -> Dict[str, Any]:
-        """
-        Sanitized serialization to use with TensorBoard’s hparams
-        """
-        d = dataclasses.asdict(self)
-        valid_types = [bool, int, float, str]
-        if is_torch_available():
-            valid_types.append(torch.Tensor)
-        return {k: v if type(v) in valid_types else str(v) for k, v in d.items()}
 
     def validate(self):
         if self.evaluate_during_training:

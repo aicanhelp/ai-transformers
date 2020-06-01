@@ -1,7 +1,6 @@
 import torch.nn as nn
 from transformers import ElectraPreTrainedModel, ElectraModel
 from transformers.file_utils import add_start_docstrings_to_callable
-from transformers.modeling_bert import BertPooler
 from transformers.modeling_electra import ELECTRA_INPUTS_DOCSTRING
 from ai_harness import harnessutils as utils
 

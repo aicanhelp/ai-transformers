@@ -4,7 +4,7 @@ from transformers.modeling_bert import BertConfig, BertModel, BertForPreTraining
     BertForMultipleChoice, BertForNextSentencePrediction, BertForTokenClassification, BertForSequenceClassification
 from transformers.tokenization_bert import BertTokenizer, BertTokenizerFast, BertWordPieceTokenizer
 
-from ai_transformersx.model.model_utils import TaskModels, ModelType, ModelTaskType
+from ..model_base import TaskModels, ModelType, ModelTaskType
 
 
 class Bert_Task_Models(TaskModels):
