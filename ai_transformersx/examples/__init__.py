@@ -10,7 +10,6 @@ TASKS = dict([
 
 @configclass
 class TaskRunArguments:
-    func: str = field("news", "taskName")
     action: str = field('train', 'specified the action name: train,eval,predict')
 
 
@@ -22,19 +21,20 @@ class ExampleTasksArguments():
 
 def _build_arguments():
     arguments = {}
-    for name, task_class in TASKS.items():
+    for task_name, task_class in TASKS.items():
         arg_obj = ExampleTasksArguments()
         arg_obj.taskArgs = task_class.args_class()
-        arguments[name] = arg_obj
+        arguments[task_name] = arg_obj
     return arguments
 
 
 def start_example_task(test=False, args=None):
     argument_objs = _build_arguments()
-    arguments: ExampleTasksArguments = ComplexArguments(argument_objs).parse(args)
+    args = ["-h"] if not args else args
+    task_name, arguments = ComplexArguments(argument_objs).parse(args)
     arguments.taskArgs.model_args.unit_test = test
-    log.info("Start Example Task:{}, with arguments:{}".format(arguments.runArgs.func, str(arguments.taskArgs)))
+    log.info("Start Example Task:{}, with arguments:{}".format(task_name, str(arguments.taskArgs)))
     task_action = arguments.runArgs.action
-    task_instance = TASKS[arguments.runArgs.func](arguments.taskArgs)
+    task_instance = TASKS[task_name](arguments.taskArgs)
 
     eval('task_instance.' + task_action + '()')
