@@ -8,46 +8,16 @@ handlers:
     level: INFO
     formatter: simple
     stream: ext://sys.stdout
-  pretrain_file:
+  transformersx_file:
     class: logging.handlers.RotatingFileHandler
     formatter: simple
-    filename: log/pretraining.log
-    maxBytes: 256000000
-    backupCount: 5
-  data_file:
-    class: logging.handlers.RotatingFileHandler
-    formatter: simple
-    filename: log/data.log
-    maxBytes: 256000000
-    backupCount: 5
-  finetune_file:
-    class: logging.handlers.RotatingFileHandler
-    formatter: simple
-    filename: log/finetuning.log
-    maxBytes: 256000000
-    backupCount: 5
-  task_file:
-    class: logging.handlers.RotatingFileHandler
-    formatter: simple
-    filename: log/task.log
+    filename: log/transformersx.log
     maxBytes: 256000000
     backupCount: 5
 loggers:
-  data:
+  transformersx:
     level: INFO
-    handlers: [console,pretrain_file]
-    propagate: no
-  pretrain:
-    level: INFO
-    handlers: [console,pretrain_file]
-    propagate: no
-  finetune:
-    level: INFO
-    handlers: [console,finetune_file]
-    propagate: no
-  task:
-    level: INFO
-    handlers: [console,task_file]
+    handlers: [console,transformersx_file]
     propagate: no
 root:
   level: WARN

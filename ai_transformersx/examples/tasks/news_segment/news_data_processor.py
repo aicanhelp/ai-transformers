@@ -4,6 +4,17 @@ import random
 from ..task_base import *
 
 
+@configclass
+class NewsDataArguments:
+    data_dir: str = field('./dataset/news', 'input the data dir for processing')
+    save_mid: bool = field(True, 'whether cache the middle data for check')
+    context_min_len: int = field(128, 'context min length')
+    sentence_min_len: int = field(10, 'sentence min length')
+    positive_mode: int = field(0, 'positive mode')
+    negative_mode: int = field(0, 'negative mode')
+    bar_size: int = field(1000, 'the progress bar size')
+
+
 class SentenceSplitter:
     def __init__(self, sentence_min_len=10):
         self._min_len = sentence_min_len
@@ -123,7 +134,7 @@ class NewsExampleSegment(SentencesSegment):
 
 
 class NewsExampleGenerator():
-    def __init__(self, config: DataArguments, type='train'):
+    def __init__(self, config: NewsDataArguments, type='train'):
         self._type = type
         self._config = config
         self.examples = []
@@ -191,7 +202,7 @@ class NewsExampleGenerator():
 
 
 class FileNewsExampleProcessor:
-    def __init__(self, file, config: DataArguments, type='train'):
+    def __init__(self, file, config: NewsDataArguments, type='train'):
         self._file = file
         self._config = config
         self._type = type
@@ -219,8 +230,10 @@ class FileNewsExampleProcessor:
 
 
 class NewsDataProcessor(DataProcessor):
-    def __init__(self, config: DataArguments):
+    def __init__(self, config: NewsDataArguments):
         self._config = config
+        if self._config is None:
+            self._config = parse_tasks_args(NewsDataArguments)
 
     def _get_example(self, file_name, type):
         return FileNewsExampleProcessor(join_path(self._config.data_dir, file_name), self._config, type).get_examples()

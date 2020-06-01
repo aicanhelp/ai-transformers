@@ -5,19 +5,8 @@ from transformers.data.metrics import simple_accuracy
 from .. import *
 
 
-@configclass
-class DataArguments:
-    data_dir: str = field('./dataset/news', 'input the data dir for processing')
-    save_mid: bool = field(True, 'whether cache the middle data for check')
-    context_min_len: int = field(128, 'context min length')
-    sentence_min_len: int = field(10, 'sentence min length')
-    positive_mode: int = field(0, 'positive mode')
-    negative_mode: int = field(0, 'negative mode')
-    bar_size: int = field(1000, 'the progress bar size')
-
-
 class ExampleTaskBase:
-    task_args: TaskArguments = None
+    args_class = TaskArguments
 
     def __init__(self, taskArgs: TaskArguments = None, task_model_class=None):
         if taskArgs is not None:

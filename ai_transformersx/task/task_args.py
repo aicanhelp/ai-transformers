@@ -14,8 +14,9 @@ class TaskArguments:
 def parse_tasks_args(argsObjOrClass=None):
     if argsObjOrClass is None:
         task_args = TaskArguments()
-    elif argsObjOrClass is not None:
+    elif argsObjOrClass is not None and type(argsObjOrClass) != type:
         task_args = argsObjOrClass
     else:
         task_args = argsObjOrClass()
+
     return Arguments(task_args).parse()

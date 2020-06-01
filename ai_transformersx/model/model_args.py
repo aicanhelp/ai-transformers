@@ -7,8 +7,6 @@ class ModelArguments:
     """
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
-    config_name: str = field(None, "Pretrained config name or path if not the same as model_name")
-
     model_base_dir: str = field("./models/pretrained",
                                 "the path base dir of models, model_base_dir and model_name decides the final model path")
 

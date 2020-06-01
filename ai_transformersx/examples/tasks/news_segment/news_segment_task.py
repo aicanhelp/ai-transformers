@@ -5,15 +5,23 @@ from transformers.data.metrics import acc_and_f1
 from transformers import EvalPrediction
 
 from ai_transformersx.task import TransformerTask
-from .news_data_processor import NewsDataProcessor, NewsExampleSegment, PredictDataProcessor
+from .news_data_processor import NewsDataProcessor, NewsExampleSegment, PredictDataProcessor, NewsDataArguments
 import numpy as np
 
-from ..task_base import ExampleTaskBase, log, TaskArguments
+from ..task_base import ExampleTaskBase, log, TaskArguments, configclass
+
+
+@configclass
+class NewsSegmentTaskArguments(TaskArguments):
+    processor_args: NewsDataArguments = NewsDataArguments()
 
 
 class NewsSegmentTask(ExampleTaskBase):
-    def __init__(self, taskArgs: TaskArguments = None):
+    args_class = NewsSegmentTaskArguments
+
+    def __init__(self, taskArgs: NewsSegmentTaskArguments = None):
         super().__init__(taskArgs)
+        self._data_processor_args = taskArgs.processor_args
 
     def _compute_metrics(self, p: EvalPrediction) -> Dict:
         preds = np.argmax(p.predictions, axis=1)
@@ -30,7 +38,7 @@ class NewsSegmentTask(ExampleTaskBase):
         return result
 
     def _data_processor(self):
-        return NewsDataProcessor(self.task_args.data_args)
+        return NewsDataProcessor(self._data_processor_args)
 
     def predict(self, article: str, context_min_len=50, sentence_min_len=10):
         '''
