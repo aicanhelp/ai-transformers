@@ -1,5 +1,6 @@
+import json
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, Any
 
 from transformers import is_torch_available
 from transformers.file_utils import torch_required, cached_property
@@ -120,6 +121,22 @@ class TrainingArguments:
     @torch_required
     def n_gpu(self):
         return self._setup_devices[1]
+
+    def to_json_string(self):
+        """
+        Serializes this instance to a JSON string.
+        """
+        return json.dumps(configclasses.asdict(self), indent=2)
+
+    def to_sanitized_dict(self) -> Dict[str, Any]:
+        """
+        Sanitized serialization to use with TensorBoard’s hparams
+        """
+        d = configclasses.asdict(self)
+        valid_types = [bool, int, float, str]
+        if is_torch_available():
+            valid_types.append(torch.Tensor)
+        return {k: v if type(v) in valid_types else str(v) for k, v in d.items()}
 
     def validate(self):
         if self.evaluate_during_training:

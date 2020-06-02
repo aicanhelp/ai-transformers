@@ -58,7 +58,7 @@ class TaskModel:
             num_labels=kwargs['num_labels']
         )
         tokenizer = self.tokenizer.from_pretrained(self.model_path)
-        unit_test = kwargs['num_labels']
+        unit_test = kwargs['unit_test']
         if not unit_test:
             model = self.model_class.from_pretrained(
                 self.model_path,

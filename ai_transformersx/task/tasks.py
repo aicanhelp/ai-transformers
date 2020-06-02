@@ -52,7 +52,7 @@ class TaskModel:
         self._freeze_parameters()
 
     def _freeze_parameters(self):
-        if not self.model:
+        if self.model is None:
             return
         parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
 
@@ -73,7 +73,7 @@ class TaskModel:
                              language=modelArgs.language)
 
         # use the custom class to replace the model Class
-        if not model_class:
+        if model_class is not None:
             t_model.model_class = model_class
 
         t_model.model_path = join_path(self._model_args.model_base_dir, t_model.model_path)
