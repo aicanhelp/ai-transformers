@@ -14,21 +14,19 @@ class ExampleTaskBase:
         else:
             self.task_args = parse_tasks_args()
         self._task_model_class = task_model_class
-        self.task_args.model_args.model_base_dir = './models/pretrained'
-        self.task_args.training_args.output_dir = './models/finetuning'
+
+    def __build_task(self):
+        return TransformerTask(self.task_args, self._data_processor(),
+                               model_class=self._task_model_class,
+                               compute_metric=self._compute_metrics)
 
     def train(self):
         self.task_args.training_args.train()
-
-        TransformerTask(self.task_args, self._data_processor(),
-                        model_class=self._task_model_class,
-                        compute_metric=self._compute_metrics).train()
+        self.__build_task().train()
 
     def eval(self):
         self.task_args.training_args.do_eval = True
-        TransformerTask(self.task_args, self._data_processor(),
-                        model_class=self._task_model_class,
-                        compute_metric=self._compute_metrics).eval()
+        self.__build_task().eval()
 
     def _acc_and_f1(self, preds, labels):
         acc = simple_accuracy(preds, labels)

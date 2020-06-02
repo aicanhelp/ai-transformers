@@ -6,6 +6,7 @@ from typing import Dict
 import numpy as np
 import torch
 from sklearn.metrics import f1_score
+from torch.utils.data import Dataset
 from transformers.data.metrics import simple_accuracy
 
 from ..model import ModelMode, task_model
@@ -189,8 +190,8 @@ class TaskTrainer:
                 results.update(result)
         return results
 
-    def predict(self) -> PredictionOutput:
-        return self._trainer.predict(test_dataset=self._taskData.eval_data())
+    def predict(self, test_dataset: Dataset = None) -> PredictionOutput:
+        return self._trainer.predict(test_dataset=self._taskData.eval_data() if not test_dataset else test_dataset)
 
 
 class TransformerTask:
