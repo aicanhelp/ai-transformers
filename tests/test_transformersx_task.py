@@ -1,7 +1,7 @@
 from transformers import BertConfig, BertTokenizer
 
 from ai_transformersx import *
-from ai_transformersx.examples import start_example_task
+from ai_transformersx.examples import start_example_task, _build_arguments
 
 
 class TestTransformersxTask:
@@ -16,5 +16,12 @@ class TestTransformersxTask:
         assert isinstance(taskModel.config, (BertConfig))
         assert isinstance(taskModel.tokenizer, (BertTokenizer))
 
+    def test_parse_task_arguments(self):
+        argument_objs = _build_arguments()
+        args = ["news", "--action=train", "--processor-args.data-dir=/test/test"]
+        task_name, arguments = ComplexArguments(argument_objs).parse(args)
+        assert task_name == "news"
+        assert arguments.processor_args.data_dir == "/test/test"
+
     def test_start_example_task(self):
-        start_example_task(True,["news","-h"])
+        start_example_task(["news", "--action=train", "--processor-args.data-dir=/test/test"], True)
