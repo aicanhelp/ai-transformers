@@ -8,7 +8,7 @@ from ai_transformersx import query_base_models
 
 @configclass()
 class DownloadConfiguration:
-    models: str = field('bert,albert', 'specified the models')
+    models: str = field('bert', 'specified the models')
     language: str = field('cn', 'specified the language of model')
     cache_dir: str = field('nlp_models_cache', 'specified the cache dir for models')
 
@@ -24,9 +24,11 @@ class Downloader():
         QueueExecutor(self.all_models, worker_num=8).run(self._download_model)
 
     def __build_models(self, framework):
-        models = query_base_models(types=self._config.models.strip(','),
+        models = query_base_models(types=self._config.models.split(','),
                                    framework=framework,
                                    language=self._config.language)
+        if not models:
+            return
         for models in models.values():
             self.all_models.extend(models[self._config.language])
 
