@@ -2,7 +2,7 @@ from transformers import BertConfig, BertTokenizer
 
 from ai_transformersx import *
 from ai_transformersx.examples import ExampleManagement, ExampleTaskBase
-from ai_transformersx.examples.main import manager
+from ai_transformersx.examples.main import task_manager
 
 
 class TestTransformersxTask:
@@ -26,4 +26,4 @@ class TestTransformersxTask:
         assert arguments.processor_args.data_dir == "/test/test"
 
     def test_start_example_task(self):
-        manager.start_example_task(["news", "--action=train", "--processor-args.data-dir=/test/test"], True)
+        task_manager.start_example_task(["news", "--action=train", "--processor-args.data-dir=/test/test"], True)

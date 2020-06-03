@@ -2,74 +2,51 @@ from ai_harness.configclasses import configclass, field
 from ai_harness.configuration import Arguments
 from ai_harness.executors import QueueExecutor
 from ai_harness.fileutils import join_path
-from transformers import AutoConfig, AutoTokenizer, AutoModel
 
-from ai_transformersx.legacy.configuration import log
-from ai_transformersx.legacy.models import Model_Tools
+from ai_transformersx import query_base_models
 
 
 @configclass()
 class DownloadConfiguration:
-    model: str = field('electra', 'specified the model')
-    model_size: str = field('tiny,base', 'specifiy the model size')
+    models: str = field('bert,albert', 'specified the models')
+    language: str = field('cn', 'specified the language of model')
     cache_dir: str = field('nlp_models_cache', 'specified the cache dir for models')
-    task_name: str = field('download_models', 'specified the task name')
 
 
 class Downloader():
     def __init__(self, config: DownloadConfiguration):
         self._config = config
-        self.models = Model_Tools.models_by_size(config.model_size)
+        self.all_models = []
 
     def __call__(self, *args, **kwargs):
-        QueueExecutor(self.models, worker_num=8).run(self._download_model)
+        self.__build_models('pt')
+        self.__build_models('tf')
+        QueueExecutor(self.all_models, worker_num=8).run(self._download_model)
 
-    def _download_model(self, model_names):
-        for model_name in model_names:
-            log.info('Initial model of ' + model_name)
-            cache_dir = join_path(self._config.cache_dir, model_name)
-            AutoConfig.from_pretrained(model_name, cache_dir=cache_dir)
-            AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-            AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
+    def __build_models(self, framework):
+        models = query_base_models(types=self._config.models.strip(','),
+                                   framework=framework,
+                                   language=self._config.language)
+        for models in models.values():
+            self.all_models.extend(models[self._config.language])
 
+    def _download_model(self, models):
+        for model in models:
+            cache_dir = join_path(self._config.cache_dir, model.model_path)
+            self.__from_pretrained(model.config, model.model_path, cache_dir)
+            self.__from_pretrained(model.tokenizer, model.model_path, cache_dir)
+            self.__from_pretrained(model.model_class, model.model_path, cache_dir)
 
-def download_models(config: DownloadConfiguration):
-    Downloader(config)()
-
-
-def test_task(config: DownloadConfiguration):
-    '''
-        a task for test
-    '''
-    log.info('Run the test task with configuration: ' + str(config))
-
-
-TASKS = {
-    'test': test_task,
-    'download_models': download_models
-}
-
-
-def task_names():
-    return TASKS.keys()
-
-
-def get_task(task_name):
-    return TASKS.get(task_name)
-
-
-def main():
-    config: DownloadConfiguration = Arguments(DownloadConfiguration()).parse()
-
-    task_name = config.task_name
-    task = get_task(task_name)
-    if not task:
-        log.error('Please specify the corrent task name, it should be %s, but the input is %s' % (
-            str(task_names()), task_name))
-        return
-
-    task(config)
+    def __from_pretrained(self, cls, path, cache_dir):
+        print("Loading from {} with {}".format(path, str(cls)))
+        try:
+            cls.from_pretrained(path, cache_dir=cache_dir)
+        except Exception as ex:
+            print("Failed to load from {} with {}, error: ".format(path, str(cls), str(ex)))
+            pass
 
 
 if __name__ == "__main__":
-    main()
+    config: DownloadConfiguration = Arguments(DownloadConfiguration()).parse()
+
+    Downloader(config)()

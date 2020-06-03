@@ -1,4 +1,4 @@
-FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-large:latest
+FROM registry.cn-beijing.aliyuncs.com/modoso/transformersx-base:latest
 #Why not pull all docker files into a folder? Because the building in Aliyun has some problem.
 
 LABEL maintainer="Dongsong.Mo" \
@@ -14,7 +14,8 @@ COPY .. .
 
 RUN pip install -r requirements.txt --no-cache-dir
 
+RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --models=bert
 
-RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --task-name download_models --model-size large
+
 
 

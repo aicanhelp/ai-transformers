@@ -18,7 +18,7 @@ class ModelArguments:
 
     model_mode: str = field("classification", "the model of model: " + str(ModelMode.names()))
 
-    tokenizer_type: str = field("default", "the name of tokenizer: default,fast")
+    framework: str = field("pt", "the name of framework: pt--Pytorch,tf--Tensorflow")
 
     language: str = field("cn", "the language of model: cn, en")
 

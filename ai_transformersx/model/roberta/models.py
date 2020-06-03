@@ -1,28 +1,35 @@
 from collections import OrderedDict
 
-from transformers.modeling_roberta import RobertaConfig, RobertaModel, RobertaForMaskedLM, RobertaForMultipleChoice, \
-    RobertaForQuestionAnswering, RobertaForSequenceClassification, RobertaForTokenClassification
+from transformers import is_tf_available
+from transformers.modeling_roberta import RobertaConfig
+
 from transformers.tokenization_roberta import RobertaTokenizer, RobertaTokenizerFast
 
-from ..model_base import TaskModels, ModelType, ModelTaskType
+from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
+
+default_model = model_func(ModelType.roberta, RobertaConfig, RobertaTokenizer)
+fast_model = model_func(ModelType.roberta, RobertaConfig, RobertaTokenizerFast)
 
 
-class Roberta_Task_Models(TaskModels):
-    MODEL_TYPE = ModelType.roberta
-    CONFIG = RobertaConfig
-    MODEL_PATHS = {
-        "cn": ["clue/roberta_chinese_clue_tiny",
-               "clue/roberta_chinese_3L312_clue_tiny",
-               "roberta_chinese_3L768_clue_tiny",
-               "clue/roberta_chinese_pair_tiny",
-               "lonePatient/roberta_chinese_clue_tiny",
-               "clue/roberta_chinese_clue_base",
-               "hfl/chinese-roberta-wwm-ext",
-               "clue/roberta_chinese_large",
-               "chinese-roberta-wwm-ext-large",
-               "clue/roberta_chinese_clue_large",
-               "clue/roberta_chinese_pair_large"
+class Roberta_Task_Models_Base(TaskModels):
+    MODELS = {
+        "cn": [default_model("clue/roberta_chinese_clue_tiny"),
+               default_model("clue/roberta_chinese_3L312_clue_tiny"),
+               default_model("roberta_chinese_3L768_clue_tiny"),
+               default_model("clue/roberta_chinese_pair_tiny"),
+               default_model("lonePatient/roberta_chinese_clue_tiny"),
+               default_model("clue/roberta_chinese_clue_base"),
+               default_model("hfl/chinese-roberta-wwm-ext"),
+               default_model("clue/roberta_chinese_large"),
+               default_model("chinese-roberta-wwm-ext-large"),
+               default_model("clue/roberta_chinese_clue_large"),
+               default_model("clue/roberta_chinese_pair_large")
                ]}
+
+
+class Roberta_Task_Models(Roberta_Task_Models_Base):
+    from transformers.modeling_roberta import RobertaModel, RobertaForMaskedLM, RobertaForMultipleChoice, \
+        RobertaForQuestionAnswering, RobertaForSequenceClassification, RobertaForTokenClassification
     MODEL_CLASSES = OrderedDict([
         (ModelTaskType.base, RobertaModel),
         (ModelTaskType.lm_head, RobertaForMaskedLM),
@@ -31,7 +38,15 @@ class Roberta_Task_Models(TaskModels):
         (ModelTaskType.qa, RobertaForQuestionAnswering),
         (ModelTaskType.multi_choice, RobertaForMultipleChoice)
     ])
-    TOKENIZERS = OrderedDict([
-        ('default', RobertaTokenizer),
-        ('fast', RobertaTokenizerFast)
-    ])
+
+if is_tf_available():
+    class TFRoberta_Task_Models(Roberta_Task_Models_Base):
+        from transformers.modeling_tf_roberta import TFRobertaModel, TFRobertaForMaskedLM, \
+            TFRobertaForQuestionAnswering, TFRobertaForSequenceClassification, TFRobertaForTokenClassification
+        MODEL_CLASSES = OrderedDict([
+            (ModelTaskType.base, TFRobertaModel),
+            (ModelTaskType.lm_head, TFRobertaForMaskedLM),
+            (ModelTaskType.seq_cls, TFRobertaForSequenceClassification),
+            (ModelTaskType.token_cls, TFRobertaForTokenClassification),
+            (ModelTaskType.qa, TFRobertaForQuestionAnswering),
+        ])

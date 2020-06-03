@@ -68,44 +68,46 @@ class TaskModel:
             model = None
         return config, tokenizer, model
 
+    def renew(self, model_class):
+        return TaskModel(self.model_type, self.config, self.model_path, model_class, self.tokenizer)
+
+
+def model_func(model_type, config, tokenizer):
+    def generate_model(model_path):
+        return TaskModel(model_type, config, model_path, None, tokenizer)
+
+    return generate_model
+
 
 class TaskModels:
-    MODEL_TYPE = None
-    MODEL_PATHS = {}
+    MODELS = {}
     MODEL_CLASSES = {}
-    TOKENIZERS = {}
-    CONFIG = None
-
-    def _model_class(self, model_path, model_task_type, tokenizer_name='default', language='cn',
-                     ignore_not_exists=False):
-        if not model_path in self.MODEL_PATHS[language]:
-            if not ignore_not_exists:
-                raise ValueError(
-                    "Cannot find the model path {} for language {},model_type={}".format(model_path, language,
-                                                                                         self.MODEL_TYPE))
-            return None
-
-        tokenizer = self.TOKENIZERS[tokenizer_name]
-        if not tokenizer:
-            if not ignore_not_exists:
-                raise ValueError(
-                    "Cannot find the tokenizer with name {},model_type={}.".format(tokenizer_name, self.MODEL_TYPE))
-            return None
-
-        model_class = self.MODEL_CLASSES[model_task_type]
-        if not model_class:
-            log.warn(
-                "Cannot find the model class of task type {},model_type={}.".format(model_task_type, self.MODEL_TYPE))
-
-        return model_class, tokenizer
 
     def all_base_models(self, language=None):
-        pass
+        return dict([(l, [model.renew(self.MODEL_CLASSES[ModelTaskType.base]) for model in models]) for l, models in
+                     self.MODELS.items() if language is None or l == language])
 
-    def task_model(self, model_path, model_task_type, tokenizer_name='default', language='cn',
-                   ignore_not_exists=False) -> TaskModel:
-        model_cls = self._model_class(model_path, model_task_type, tokenizer_name, language, ignore_not_exists)
-        if not model_cls and ignore_not_exists:
+    def all_paths(self, language=None):
+        return dict([(l, [model.model_path for model in models]) for l, models in self.MODELS.items() if
+                     language is None or language == l])
+
+    def _model_class(self, model_path, model_task_type, language='cn'):
+        models_l = self.MODELS[language]
+        if not models_l:
             return None
-        return TaskModel(self.MODEL_TYPE, self.CONFIG, model_path,
-                         *model_cls)
+        for model in models_l:
+            if model.model_path == model_path:
+                model_class = self.MODEL_CLASSES[model_task_type]
+                if not model_class:
+                    return None
+                return model.renew(model_class)
+
+        return None
+
+    def task_model(self, model_path, model_task_type, language='cn', ignore_not_exists=False) -> TaskModel:
+        model = self._model_class(model_path, model_task_type, language)
+        if not model and not ignore_not_exists:
+            raise ValueError(
+                "Cannot find the model path {} for language {},model_type={}".format(model_path, language,
+                                                                                     model_task_type))
+        return model

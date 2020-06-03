@@ -70,8 +70,8 @@ class TaskModel:
     def _build_task_model(self, modelArgs, model_class=None):
         t_model = task_model(model_path=modelArgs.model_name,
                              model_task_type=modelArgs.model_task_type,
-                             tokenizer_name=modelArgs.tokenizer_type,
-                             language=modelArgs.language)
+                             language=modelArgs.language,
+                             framework=modelArgs.framework)
 
         # use the custom class to replace the model Class
         if model_class is not None:

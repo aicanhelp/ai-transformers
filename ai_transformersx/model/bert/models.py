@@ -1,21 +1,27 @@
 from collections import OrderedDict
 
-from transformers.modeling_bert import BertConfig, BertModel, BertForPreTraining, BertForMaskedLM, \
-    BertForMultipleChoice, BertForNextSentencePrediction, BertForTokenClassification, BertForSequenceClassification
+from transformers import is_tf_available
+from transformers.modeling_bert import BertConfig
 from transformers.tokenization_bert import BertTokenizer, BertTokenizerFast, BertWordPieceTokenizer
 
-from ..model_base import TaskModels, ModelType, ModelTaskType
+from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
+
+default_model = model_func(ModelType.bert, BertConfig, BertTokenizer)
+fast_model = model_func(ModelType.bert, BertConfig, BertTokenizerFast)
+wpe_model = model_func(ModelType.bert, BertConfig, BertWordPieceTokenizer)
 
 
-class Bert_Task_Models(TaskModels):
-    MODEL_TYPE = ModelType.bert
-    CONFIG = BertConfig
-    MODEL_PATHS = {
-        "cn": ["bert-base-chinese",
-               "adamlin/bert-distil-chinese",
-               "hfl/chinese-bert-wwm",
-               "hfl/chinese-bert-wwm-ext"
+class Bert_Task_Models_Base(TaskModels):
+    MODELS = {
+        "cn": [default_model("bert-base-chinese"),
+               default_model("adamlin/bert-distil-chinese"),
+               default_model("hfl/chinese-bert-wwm"),
+               default_model("hfl/chinese-bert-wwm-ext")
                ]}
+
+class Bert_Task_Models(Bert_Task_Models_Base):
+    from transformers.modeling_bert import BertModel, BertForPreTraining, BertForMaskedLM, \
+        BertForMultipleChoice, BertForNextSentencePrediction, BertForTokenClassification, BertForSequenceClassification
     MODEL_CLASSES = OrderedDict([
         (ModelTaskType.base, BertModel),
         (ModelTaskType.pretrain, BertForPreTraining),
@@ -25,8 +31,19 @@ class Bert_Task_Models(TaskModels):
         (ModelTaskType.token_cls, BertForTokenClassification),
         (ModelTaskType.next_seq, BertForNextSentencePrediction),
     ])
-    TOKENIZERS = OrderedDict([
-        ('default', BertTokenizer),
-        ('fast', BertTokenizerFast),
-        ('word_piece', BertWordPieceTokenizer)
-    ])
+
+
+if is_tf_available():
+    class TFBert_Task_Models(Bert_Task_Models_Base):
+        from transformers.modeling_tf_bert import TFBertModel, TFBertForPreTraining, TFBertForMaskedLM, \
+            TFBertForMultipleChoice, TFBertForNextSentencePrediction, TFBertForTokenClassification, \
+            TFBertForSequenceClassification
+        MODEL_CLASSES = OrderedDict([
+            (ModelTaskType.base, TFBertModel),
+            (ModelTaskType.pretrain, TFBertForPreTraining),
+            (ModelTaskType.lm_head, TFBertForMaskedLM),
+            (ModelTaskType.seq_cls, TFBertForSequenceClassification),
+            (ModelTaskType.multi_choice, TFBertForMultipleChoice),
+            (ModelTaskType.token_cls, TFBertForTokenClassification),
+            (ModelTaskType.next_seq, TFBertForNextSentencePrediction),
+        ])
