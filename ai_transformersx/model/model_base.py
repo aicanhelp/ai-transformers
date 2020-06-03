@@ -35,6 +35,7 @@ class ModelTaskType:
     qa: str = 'qa'
     qa_s: str = 'qa_s'
     seq_cls: str = 'seq_cls'
+    seq_cls_x: str = 'seq_cls_x'
     token_cls: str = 'token_cls'
     multi_choice: str = 'multi_choice'
     next_seq: str = 'next_seq'

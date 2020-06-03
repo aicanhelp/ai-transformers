@@ -3,6 +3,7 @@ from collections import OrderedDict
 from transformers import is_tf_available
 from transformers.modeling_bert import BertConfig
 from transformers.tokenization_bert import BertTokenizer, BertTokenizerFast, BertWordPieceTokenizer
+from .TurboBertSequenceClassification import TurboBertForSequenceClassification
 
 from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
 
@@ -19,6 +20,7 @@ class Bert_Task_Models_Base(TaskModels):
                default_model("hfl/chinese-bert-wwm-ext")
                ]}
 
+
 class Bert_Task_Models(Bert_Task_Models_Base):
     from transformers.modeling_bert import BertModel, BertForPreTraining, BertForMaskedLM, \
         BertForMultipleChoice, BertForNextSentencePrediction, BertForTokenClassification, BertForSequenceClassification
@@ -27,6 +29,7 @@ class Bert_Task_Models(Bert_Task_Models_Base):
         (ModelTaskType.pretrain, BertForPreTraining),
         (ModelTaskType.lm_head, BertForMaskedLM),
         (ModelTaskType.seq_cls, BertForSequenceClassification),
+        (ModelTaskType.seq_cls_x, TurboBertForSequenceClassification),
         (ModelTaskType.multi_choice, BertForMultipleChoice),
         (ModelTaskType.token_cls, BertForTokenClassification),
         (ModelTaskType.next_seq, BertForNextSentencePrediction),
