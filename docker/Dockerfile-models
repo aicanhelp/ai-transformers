@@ -1,16 +1,10 @@
-FROM nvcr.io/nvidia/pytorch:20.03-py3
-#Why not pull all docker files into a folder? Because the building in Aliyun has some problem.
+FROM registry.cn-beijing.aliyuncs.com/aimonvidia/transformers-all
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \
       version="1.0.0"
 
-RUN apt-get clean && apt-get update --fix-missing
-RUN apt-get install -y --fix-missing --no-install-recommends \
-  build-essential && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-  mkdir -p /app/transformersx && mkdir /app/models
+RUN mkdir -p /app/transformersx && mkdir /app/models
 
 WORKDIR /app/transformersx
 
