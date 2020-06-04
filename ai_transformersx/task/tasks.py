@@ -39,12 +39,14 @@ class TaskModel:
         self._init()
 
     def _init(self):
-        self.task_model = self._build_task_model(self._model_args, self._user_model_class)
+        self.task_model, model_cache_dir = self._build_task_model(self._model_args, self._user_model_class)
         log.info("Loading the task model: " + str(self.task_model))
 
         self.config, self.tokenizer, self.model = self.task_model.load(
             num_labels=self._model_args.num_labels,
-            unit_test=self._model_args.unit_test)
+            unit_test=self._model_args.unit_test,
+            cache_dir=model_cache_dir
+        )
 
         log.info(
             "Loaded task model, config: {}, tokenizer: {}, model: {} ".format(type(self.config), type(self.tokenizer),
@@ -78,8 +80,9 @@ class TaskModel:
             t_model.model_class = model_class
 
         t_model.model_path = join_path(self._model_args.model_base_dir, t_model.model_path)
+        mode_cache_dir = self._model_args.model_cache_dir if not os.path.exists(t_model.model_path) else None
 
-        return t_model
+        return t_model, mode_cache_dir
 
     def _acc_and_f1(self, preds, labels):
         acc = simple_accuracy(preds, labels)

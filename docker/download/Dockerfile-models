@@ -1,4 +1,4 @@
-FROM registry.cn-beijing.aliyuncs.com/aimonvidia/transformers-all
+FROM registry.cn-beijing.aliyuncs.com/aimonvidia/transformers-turbo
 
 LABEL maintainer="Dongsong.Mo" \
       name="Docker for download the transformer pretrain models" \

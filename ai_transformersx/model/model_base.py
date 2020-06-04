@@ -54,16 +54,19 @@ class TaskModel:
         self.tokenizer = tokenizer
 
     def load(self, **kwargs):
+        cache_dir = kwargs['cache_dir']
         config = self.config.from_pretrained(
             self.model_path,
-            num_labels=kwargs['num_labels']
+            num_labels=kwargs['num_labels'],
+            cache_dir=cache_dir
         )
-        tokenizer = self.tokenizer.from_pretrained(self.model_path)
+        tokenizer = self.tokenizer.from_pretrained(self.model_path, cache_dir=cache_dir)
         unit_test = kwargs['unit_test']
         if not unit_test:
             model = self.model_class.from_pretrained(
                 self.model_path,
-                config=config
+                config=config,
+                cache_dir=cache_dir
             )
         else:
             model = None
