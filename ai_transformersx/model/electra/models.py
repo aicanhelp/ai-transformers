@@ -17,7 +17,9 @@ class Electra_Task_Models_Base(TaskModels):
         "cn": [default_model("hfl/chinese-electra-small-discriminator"),
                default_model("hfl/chinese-electra-small-generator"),
                default_model("hfl/chinese-electra-base-discriminator"),
-               default_model("hfl/chinese-electra-base-generator")
+               default_model("hfl/chinese-electra-base-generator"),
+               default_model("hfl/chinese-electra-large-discriminator"),
+               default_model("hfl/chinese-electra-large-generator")
                ]}
 
 

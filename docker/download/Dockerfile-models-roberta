@@ -7,12 +7,43 @@ LABEL maintainer="Dongsong.Mo" \
 
 WORKDIR /app/transformersx
 
+RUN rm -rf log && mkdir log
+
 RUN pip install --no-cache-dir \
     pytorch_lightning==0.7.6 \
     ai-harness==0.4.12 \
     ai-transformersx==0.4.22
 
-RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --models=roberta
+#    MODELS = {
+#        "cn": [default_model("clue/roberta_chinese_clue_tiny"),
+#               default_model("clue/roberta_chinese_3L312_clue_tiny"),
+#               default_model("clue/roberta_chinese_pair_tiny"),
+#               default_model("clue/roberta_chinese_clue_base"),
+#               default_model("clue/roberta_chinese_large"),
+#               default_model("clue/roberta_chinese_clue_large"),
+#               default_model("clue/roberta_chinese_pair_large"),
+#               default_model("roberta_chinese_3L768_clue_tiny"),
+#               default_model("chinese-roberta-wwm-ext-large"),
+#               default_model("lonePatient/roberta_chinese_clue_tiny"),
+#               default_model("hfl/chinese-roberta-wwm-ext"),
+#               ]}
+#
+#  Split the download of the models for the docker build cache.
+
+ARG RUN_CMD_CN="python down_tasks.py --cache-dir /app/models --language=cn --model_type=roberta"
+
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_clue_tiny"
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_3L312_clue_tiny"
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_pair_tiny"
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_clue_base"
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_large"
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_clue_large"
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_pair_large"
+RUN $RUN_CMD_CN --model_path="clue/roberta_chinese_3L768_clue_tiny"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-roberta-wwm-ext-large"
+RUN $RUN_CMD_CN --model_path="lonePatient/roberta_chinese_clue_tiny"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-roberta-wwm-ext"
+
 
 
 

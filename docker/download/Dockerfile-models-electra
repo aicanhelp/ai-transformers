@@ -6,13 +6,33 @@ LABEL maintainer="Dongsong.Mo" \
       version="1.0.0"
 
 WORKDIR /app/transformersx
+RUN rm -rf log && mkdir log
 
 RUN pip install --no-cache-dir \
     pytorch_lightning==0.7.6 \
     ai-harness==0.4.12 \
     ai-transformersx==0.4.22
 
-RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --models=electra
+#    MODELS = {
+#        "cn": [default_model("hfl/chinese-electra-small-discriminator"),
+#               default_model("hfl/chinese-electra-small-generator"),
+#               default_model("hfl/chinese-electra-base-discriminator"),
+#               default_model("hfl/chinese-electra-base-generator"),
+#               default_model("hfl/chinese-electra-large-discriminator"),
+#               default_model("hfl/chinese-electra-large-generator")
+#               ]}
+#
+#  Split the download of the models for the docker build cache.
+
+ARG RUN_CMD_CN="python down_tasks.py --cache-dir /app/models --language=cn --model_type=electra"
+
+RUN $RUN_CMD_CN --model_path="hfl/chinese-electra-small-discriminator"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-electra-small-generator"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-electra-base-discriminator"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-electra-base-generator"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-electra-large-discriminator"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-electra-large-generator"
+
 
 
 

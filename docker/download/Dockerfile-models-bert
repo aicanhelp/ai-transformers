@@ -7,12 +7,28 @@ LABEL maintainer="Dongsong.Mo" \
 
 WORKDIR /app/transformersx
 
+RUN rm -rf log && mkdir log
+
 RUN pip install --no-cache-dir \
     pytorch_lightning==0.7.6 \
     ai-harness==0.4.12 \
     ai-transformersx==0.4.22
 
-RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --models=bert
+#    MODELS = {
+#        "cn": [default_model("bert-base-chinese"),
+#               default_model("adamlin/bert-distil-chinese"),
+#               default_model("hfl/chinese-bert-wwm"),
+#               default_model("hfl/chinese-bert-wwm-ext")
+#               ]}
+#
+#  Split the download of the models for the docker build cache.
+
+ARG RUN_CMD_CN="python down_tasks.py --cache-dir /app/models --language=cn --model_type=bert"
+
+RUN $RUN_CMD_CN --model_path="clue/albert_chinese_tiny"
+RUN $RUN_CMD_CN --model_path="clue/albert_chinese_small"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-bert-wwm"
+RUN $RUN_CMD_CN --model_path="hfl/chinese-bert-wwm-ext"
 
 
 
