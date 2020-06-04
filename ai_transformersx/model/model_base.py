@@ -9,7 +9,7 @@ class ModelType:
     bert: str = "bert"
     albert: str = "albert"
     electra: str = "electra"
-    roberta: str = "robrerta"
+    roberta: str = "roberta"
     xlnet: str = "xlnet"
 
     @staticmethod

@@ -10,7 +10,7 @@ WORKDIR /app/transformersx
 RUN pip install --no-cache-dir \
     pytorch_lightning==0.7.6 \
     ai-harness==0.4.12 \
-    ai-transformersx==0.4.21
+    ai-transformersx==0.4.22
 
 RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --models=electra
 
