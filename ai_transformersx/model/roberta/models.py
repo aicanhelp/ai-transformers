@@ -15,15 +15,15 @@ class Roberta_Task_Models_Base(TaskModels):
     MODELS = {
         "cn": [default_model("clue/roberta_chinese_clue_tiny"),
                default_model("clue/roberta_chinese_3L312_clue_tiny"),
-               default_model("roberta_chinese_3L768_clue_tiny"),
                default_model("clue/roberta_chinese_pair_tiny"),
-               default_model("lonePatient/roberta_chinese_clue_tiny"),
                default_model("clue/roberta_chinese_clue_base"),
-               default_model("hfl/chinese-roberta-wwm-ext"),
                default_model("clue/roberta_chinese_large"),
-               default_model("chinese-roberta-wwm-ext-large"),
                default_model("clue/roberta_chinese_clue_large"),
-               default_model("clue/roberta_chinese_pair_large")
+               default_model("clue/roberta_chinese_pair_large"),
+               default_model("roberta_chinese_3L768_clue_tiny"),
+               default_model("chinese-roberta-wwm-ext-large"),
+               default_model("lonePatient/roberta_chinese_clue_tiny"),
+               default_model("hfl/chinese-roberta-wwm-ext"),
                ]}
 
 
@@ -38,6 +38,7 @@ class Roberta_Task_Models(Roberta_Task_Models_Base):
         (ModelTaskType.qa, RobertaForQuestionAnswering),
         (ModelTaskType.multi_choice, RobertaForMultipleChoice)
     ])
+
 
 if is_tf_available():
     class TFRoberta_Task_Models(Roberta_Task_Models_Base):

@@ -8,7 +8,7 @@ from transformers.tokenization_albert import AlbertTokenizer
 from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
 
 default_model = model_func(ModelType.albert, AlbertConfig, AlbertTokenizer)
-voidful_model = model_func(ModelType.albert, AlbertConfig, BertTokenizer)
+bert_model = model_func(ModelType.albert, AlbertConfig, BertTokenizer)
 
 '''
 Attention please, some albert models are using BertTokenizer.
@@ -17,13 +17,14 @@ Attention please, some albert models are using BertTokenizer.
 
 class Albert_Task_Models_Base(TaskModels):
     MODELS = {
-        "cn": [default_model("clue/albert_chinese_tiny"),
-               voidful_model("voidful/albert_chinese_tiny"),
-               default_model("clue/albert_chinese_small"),
-               voidful_model("voidful/albert_chinese_small"),
+        "cn": [bert_model("clue/albert_chinese_tiny"),
+               bert_model("clue/albert_chinese_small"),
                default_model("onePatient/albert_chinese_small"),
-               voidful_model("voidful/albert_chinese_base"),
-               voidful_model("voidful/albert_chinese_large")
+               bert_model("voidful/albert_chinese_tiny"),
+               bert_model("voidful/albert_chinese_small"),
+               bert_model("voidful/albert_chinese_base"),
+               bert_model("voidful/albert_chinese_large"),
+               bert_model("voidful/albert_chinese_xlarge")
                ]}
 
 
