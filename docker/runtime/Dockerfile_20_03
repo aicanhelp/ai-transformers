@@ -1,0 +1,13 @@
+#FROM registry.cn-beijing.aliyuncs.com/aimonvidia/pytorch_20_03
+
+FROM registry.cn-beijing.aliyuncs.com/aimonvidia/transformers-turbo
+
+ARG PIP="pip install -i https://pypi.douban.com/simple/"
+
+RUN $PIP python-box boltons tqdm==4.45.0
+# For the package update frequently
+RUN $PIP transformers==2.11.0
+# For my package
+RUN pip install --no-cache-dir ai-harness==0.4.11 ai-transformersx==0.4.20
+
+WORKDIR /workspace
