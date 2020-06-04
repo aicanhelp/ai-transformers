@@ -5,6 +5,7 @@ from .examples_management import ExampleManagement
 task_manager = ExampleManagement()
 task_manager.register_tasks([
     ('news', NewsSegmentTask),
+    ('turbo-news', TurboNewsSegmentTask),
     ('sentiment', SentimentTask)
 ])
 

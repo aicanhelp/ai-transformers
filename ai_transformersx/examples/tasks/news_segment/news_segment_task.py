@@ -4,6 +4,7 @@ from transformers.data.metrics import acc_and_f1
 
 from transformers import EvalPrediction
 
+from ai_transformersx.model.bert.TurboBertSequenceClassification import TurboBertForSequenceClassification
 from ai_transformersx.task import TransformerTask
 from .news_data_processor import NewsDataProcessor, NewsExampleSegment, PredictDataProcessor, NewsDataArguments
 import numpy as np
@@ -19,9 +20,10 @@ class NewsSegmentTaskArguments(TaskArguments):
 class NewsSegmentTask(ExampleTaskBase):
     args_class = NewsSegmentTaskArguments
 
-    def __init__(self, taskArgs: NewsSegmentTaskArguments = None):
+    def __init__(self, taskArgs: NewsSegmentTaskArguments = None, task_class=None):
         super().__init__(taskArgs)
         self._data_processor_args = taskArgs.processor_args
+        self._task_class = task_class
 
     def _compute_metrics(self, p: EvalPrediction) -> Dict:
         preds = np.argmax(p.predictions, axis=1)
@@ -46,6 +48,13 @@ class NewsSegmentTask(ExampleTaskBase):
         '''
         segment = NewsExampleSegment(article, context_min_len, sentence_min_len)
         self.task_args.data_args.predict = True
-        predict_result = TransformerTask(self.task_args, PredictDataProcessor(segment)).predict()
+        predict_result = TransformerTask(self.task_args, PredictDataProcessor(segment),
+                                         model_class=self._task_class
+                                         ).predict()
         seperate_index = predict_result.guids * (predict_result.predictions == 0)
         return segment, seperate_index
+
+
+class TurboNewsSegmentTask(NewsSegmentTask):
+    def __init__(self, taskArgs: NewsSegmentTaskArguments = None):
+        super().__init__(taskArgs, TurboBertForSequenceClassification)
