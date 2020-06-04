@@ -6,7 +6,7 @@ from ..task_base import *
 
 @configclass
 class NewsDataArguments:
-    data_dir: str = field('./dataset/news', 'input the data dir for processing')
+    data_dir: str = field('/app/dataset/news', 'input the data dir for processing')
     save_mid: bool = field(True, 'whether cache the middle data for check')
     context_min_len: int = field(128, 'context min length')
     sentence_min_len: int = field(10, 'sentence min length')

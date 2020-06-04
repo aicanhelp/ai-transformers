@@ -79,8 +79,14 @@ class TaskModel:
         if model_class is not None:
             t_model.model_class = model_class
 
-        t_model.model_path = join_path(self._model_args.model_base_dir, t_model.model_path)
-        mode_cache_dir = self._model_args.model_cache_dir if not os.path.exists(t_model.model_path) else None
+        model_path = join_path(self._model_args.model_base_dir, t_model.model_path)
+        mode_cache_dir = join_path(self._model_args.model_cache_dir, t_model.model_path) if not os.path.exists(
+            model_path) or modelArgs.use_cache else None
+
+        if not mode_cache_dir:
+            t_model.model_path = model_path
+
+        log.info("")
 
         return t_model, mode_cache_dir
 

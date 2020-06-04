@@ -4,10 +4,10 @@ from transformers.data.metrics import acc_and_f1
 
 from transformers import EvalPrediction
 
-from ai_transformersx.model.bert.TurboBertSequenceClassification import TurboBertForSequenceClassification
 from ai_transformersx.task import TransformerTask
 from .news_data_processor import NewsDataProcessor, NewsExampleSegment, PredictDataProcessor, NewsDataArguments
 import numpy as np
+from ai_transformersx.model import is_turbo_available
 
 from ..task_base import ExampleTaskBase, log, TaskArguments, configclass
 
@@ -55,6 +55,10 @@ class NewsSegmentTask(ExampleTaskBase):
         return segment, seperate_index
 
 
-class TurboNewsSegmentTask(NewsSegmentTask):
-    def __init__(self, taskArgs: NewsSegmentTaskArguments = None):
-        super().__init__(taskArgs, TurboBertForSequenceClassification)
+if is_turbo_available():
+    from ai_transformersx.model.bert.TurboBertSequenceClassification import TurboBertForSequenceClassification
+
+
+    class TurboNewsSegmentTask(NewsSegmentTask):
+        def __init__(self, taskArgs: NewsSegmentTaskArguments = None):
+            super().__init__(taskArgs, TurboBertForSequenceClassification)

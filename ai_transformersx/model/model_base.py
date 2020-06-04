@@ -3,6 +3,17 @@ from ai_harness import harnessutils as aiutils
 
 log = aiutils.getLogger('task')
 
+try:
+    import turbo_transformers
+
+    __turbo_available = True
+except:
+    __turbo_available = False
+
+
+def is_turbo_available():
+    return __turbo_available
+
 
 @dataclass(frozen=True)
 class ModelType:
@@ -45,28 +56,32 @@ class ModelTaskType:
         return [f.name for f in fields(ModelTaskType)]
 
 
+@dataclass(init=True)
 class TaskModel:
-    def __init__(self, model_type, config, model_path, model_class, tokenizer):
-        self.model_type = model_type
-        self.config = config
-        self.model_path = model_path
-        self.model_class = model_class
-        self.tokenizer = tokenizer
+    model_type: str = None
+    config: type = None
+    model_path: str = None
+    model_class: type = None
+    tokenizer: type = None
 
     def load(self, **kwargs):
         cache_dir = kwargs['cache_dir']
         config = self.config.from_pretrained(
             self.model_path,
             num_labels=kwargs['num_labels'],
-            cache_dir=cache_dir
+            cache_dir=cache_dir,
+            local_files_only=True
         )
-        tokenizer = self.tokenizer.from_pretrained(self.model_path, cache_dir=cache_dir)
+        tokenizer = self.tokenizer.from_pretrained(self.model_path,
+                                                   cache_dir=cache_dir,
+                                                   local_files_only=True)
         unit_test = kwargs['unit_test']
         if not unit_test:
             model = self.model_class.from_pretrained(
                 self.model_path,
                 config=config,
-                cache_dir=cache_dir
+                cache_dir=cache_dir,
+                local_files_only=True
             )
         else:
             model = None

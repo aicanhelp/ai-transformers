@@ -8,7 +8,7 @@ from .albert.models import Albert_Task_Models
 from .electra.models import Electra_Task_Models
 from .roberta.models import Roberta_Task_Models
 from .xlnet.models import XLNet_Task_Models
-from .model_base import ModelType, ModelTaskType, ModelMode
+from .model_base import ModelType, ModelTaskType, ModelMode, is_turbo_available
 
 if is_tf_available():
     from .bert.models import TFBert_Task_Models

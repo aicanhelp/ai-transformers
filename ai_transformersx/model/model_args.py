@@ -7,13 +7,15 @@ class ModelArguments:
     """
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
-    model_base_dir: str = field("",
+    model_base_dir: str = field("/app/models/transformers/finetuning",
                                 "The 'model_base_dir' generally is for the finetuned models."
                                 "Generally, the model is loaded from 'model_base_dir' firstly."
                                 " If the model cannot be found, it will be loaded from the model_cache_dir.")
 
-    model_cache_dir: str = field("./models/pretrained",
+    model_cache_dir: str = field("/app/models/transformers/pretrained",
                                  "This folder is for the pretrained models downloaded from Internet.")
+
+    use_cache: bool = field(True, "Use the model in model_cache_dir firstly. Generally, for training, it should be True")
 
     model_name: str = field("bert-base-chinese", "the name of model: " + str(ALL_TASK_MODEL_PATHS))
 
