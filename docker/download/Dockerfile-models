@@ -22,7 +22,6 @@ RUN pip install --no-cache-dir \
     transformers==2.11.0  \
     ai-transformersx==0.4.22 \
 
-    
 
 
 
