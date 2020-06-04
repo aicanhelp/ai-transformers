@@ -7,6 +7,10 @@ LABEL maintainer="Dongsong.Mo" \
 
 WORKDIR /app/transformersx
 
+RUN pip install --no-cache-dir \
+    ai-harness==0.4.12 \
+    ai-transformersx==0.4.21
+
 RUN rm -rf log && mkdir log && python down_tasks.py --cache-dir /app/models --models=roberta
 
 
