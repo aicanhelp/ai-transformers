@@ -13,4 +13,11 @@ RUN rm -rf *
 # Copy as early as possible so we can cache ...
 COPY . .
 
-RUN pip install -r requirements.txt --no-cache-dir
+RUN pip install --no-cache-dir \
+    ai-harness==0.4.11 \
+    python-box==4.2.2  \
+    boltons==20.0.0    \
+    transformers==2.11.0  \
+    ai-transformersx==0.4.20 \
+
+
