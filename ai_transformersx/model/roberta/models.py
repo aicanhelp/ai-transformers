@@ -22,7 +22,7 @@ class Roberta_Task_Models_Base(TaskModels):
                default_model("clue/roberta_chinese_pair_large"),
                default_model("roberta_chinese_3L768_clue_tiny"),
                default_model("chinese-roberta-wwm-ext-large"),
-               default_model("lonePatient/roberta_chinese_clue_tiny"),
+               default_model("onePatient/roberta_chinese_clue_tiny"),
                default_model("hfl/chinese-roberta-wwm-ext"),
                ]}
 
