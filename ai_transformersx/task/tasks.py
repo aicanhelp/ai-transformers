@@ -86,7 +86,7 @@ class TaskModel:
         if not mode_cache_dir:
             t_model.model_path = model_path
 
-        log.info("")
+        log.info("Built task model: {}".format(str(t_model)))
 
         return t_model, mode_cache_dir
 

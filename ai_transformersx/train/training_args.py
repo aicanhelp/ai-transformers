@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @configclass
 class TrainingArguments:
-    output_dir: str = field('/app/models/transformers/finetuning',
+    output_dir: str = field('/app/models/finetuning',
                             "The output directory where the model predictions and checkpoints will be written.")
     overwrite_output_dir: bool = field(
         False, "Overwrite the content of the output directory."

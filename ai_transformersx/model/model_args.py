@@ -7,12 +7,12 @@ class ModelArguments:
     """
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
-    model_finetuned_dir: str = field("/app/models/transformers/finetuning",
+    model_finetuned_dir: str = field("/app/models/finetuning",
                                 "The 'model_base_dir' generally is for the finetuned models."
                                 "Generally, the model is loaded from 'model_finetuned_dir' firstly."
                                 " If the model cannot be found, it will be loaded from the model_pretrained_dir.")
 
-    model_pretrained_dir: str = field("/app/models/transformers/pretrained",
+    model_pretrained_dir: str = field("/app/models/pretrained",
                                  "This folder is for the pretrained models downloaded from Internet.")
 
     use_pretrained: bool = field(False, "Use the model in model_pretrained_dir firstly. Generally, for training, it should be True")
