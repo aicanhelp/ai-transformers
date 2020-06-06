@@ -18,7 +18,7 @@ class TurboBertForSequenceClassification(nn.Module):
     def forward(
             self,
             input_ids=None,
-            attention_mask=None,
+            attention_masks=None,
             token_type_ids=None,
             position_ids=None,
             labels=None,
@@ -26,7 +26,7 @@ class TurboBertForSequenceClassification(nn.Module):
 
         outputs = self.bert(
             input_ids,
-            attention_mask=attention_mask,
+            attention_masks=attention_masks,
             token_type_ids=token_type_ids,
             position_ids=position_ids,
             pooling_type=PoolingType.FIRST,
