@@ -81,7 +81,7 @@ class TaskModel:
 
         model_path = join_path(self._model_args.model_finetuned_dir, t_model.model_path)
         mode_cache_dir = join_path(self._model_args.model_pretrained_dir, t_model.model_path) if not os.path.exists(
-            model_path) or modelArgs.use_pretrained else None
+            model_path) or not modelArgs.not_use_pretrained else None
 
         if not mode_cache_dir:
             t_model.model_path = model_path
@@ -210,10 +210,14 @@ class TransformerTask:
         log.info(json.dumps(task_args, default=lambda obj: obj.__dict__, indent=True))
 
         self.task_args = task_args
-        self.task_args.training_args.validate()
         self._taskModel = TaskModel(task_args.model_args, model_class)
         self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessor,
                                   task_args.training_args.local_rank)
+        self.task_args.training_args.validate()
+        self.task_args.training_args.output_dir = join_path(
+            self.task_args.training_args.output_dir,
+            self.task_args.model_args.model_name
+        )
         self._taskTrainer = TaskTrainer(task_args.training_args, self._taskModel,
                                         self._taskData, compute_metric)
         self._training_args = task_args.training_args

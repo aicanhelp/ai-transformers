@@ -15,7 +15,7 @@ class ModelArguments:
     model_pretrained_dir: str = field("/app/models/pretrained",
                                  "This folder is for the pretrained models downloaded from Internet.")
 
-    use_pretrained: bool = field(False, "Use the model in model_pretrained_dir firstly. Generally, for training, it should be True")
+    not_use_pretrained: bool = field(False, "Whether use the model in model_pretrained_dir. Generally, for training, it should be False")
 
     model_name: str = field("bert-base-chinese", "the name of model: " + str(ALL_TASK_MODEL_PATHS))
 
