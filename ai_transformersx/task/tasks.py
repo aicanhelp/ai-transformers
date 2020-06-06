@@ -57,17 +57,21 @@ class TaskModel:
     def _freeze_parameters(self):
         if self.model is None:
             return
-        parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
 
-        for param in parameters:
-            param.requires_grad = False
+        if self._model_args.freeze_parameter and hasattr(self.model, self._model_args.freeze_parameter):
+            parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
 
-        log.info("num params:" + str(self.model.num_parameters()))
-        log.info("num trainable params:" + str(self.model.num_parameters(only_trainable=True)))
+            for param in parameters:
+                param.requires_grad = False
 
-        log.info("Model Parameters Details: ")
-        for name, param in self.model.named_parameters():
-            log.info("{}:{}".format(name, param.size()))
+        if hasattr(self.model, 'num_parameters'):
+            log.info("num params:" + str(self.model.num_parameters()))
+            log.info("num trainable params:" + str(self.model.num_parameters(only_trainable=True)))
+
+        if hasattr(self.model, 'named_parameters'):
+            log.info("Model Parameters Details: ")
+            for name, param in self.model.named_parameters():
+                log.info("{}:{}".format(name, param.size()))
 
     def _build_task_model(self, modelArgs, model_class=None):
         t_model = task_model(model_path=modelArgs.model_name,
