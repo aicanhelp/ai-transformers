@@ -59,10 +59,10 @@ class TaskModel:
             return
 
         if self._model_args.freeze_parameter and hasattr(self.model, self._model_args.freeze_parameter):
-            parameters = eval("self.model." + self._model_args.freeze_parameter + '.parameters()')
-
-            for param in parameters:
-                param.requires_grad = False
+            freeze_model = eval("self.model." + self._model_args.freeze_parameter)
+            if hasattr(freeze_model, "parameters"):
+                for param in freeze_model.parameters():
+                    param.requires_grad = False
 
         if hasattr(self.model, 'num_parameters'):
             log.info("num params:" + str(self.model.num_parameters()))
