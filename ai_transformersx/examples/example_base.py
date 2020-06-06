@@ -26,6 +26,7 @@ class ExampleTaskBase:
 
     def eval(self):
         self.task_args.training_args.do_eval = True
+        self.task_args.model_args.use_cache = False
         self.__build_task().eval()
 
     def _acc_and_f1(self, preds, labels):

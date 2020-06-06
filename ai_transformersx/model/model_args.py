@@ -7,15 +7,15 @@ class ModelArguments:
     """
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
-    model_base_dir: str = field("/app/models/transformers/finetuning",
+    model_finetuned_dir: str = field("/app/models/transformers/finetuning",
                                 "The 'model_base_dir' generally is for the finetuned models."
-                                "Generally, the model is loaded from 'model_base_dir' firstly."
-                                " If the model cannot be found, it will be loaded from the model_cache_dir.")
+                                "Generally, the model is loaded from 'model_finetuned_dir' firstly."
+                                " If the model cannot be found, it will be loaded from the model_pretrained_dir.")
 
-    model_cache_dir: str = field("/app/models/transformers/pretrained",
+    model_pretrained_dir: str = field("/app/models/transformers/pretrained",
                                  "This folder is for the pretrained models downloaded from Internet.")
 
-    use_cache: bool = field(True, "Use the model in model_cache_dir firstly. Generally, for training, it should be True")
+    use_pretrained: bool = field(False, "Use the model in model_pretrained_dir firstly. Generally, for training, it should be True")
 
     model_name: str = field("bert-base-chinese", "the name of model: " + str(ALL_TASK_MODEL_PATHS))
 
@@ -34,7 +34,3 @@ class ModelArguments:
     num_labels: int = field(2, "the number of label")
 
     unit_test: bool = field(False, "For unit test of the code, without the load of the model")
-
-    def validate(self):
-        if not self.model_base_dir:
-            raise ValueError("model_base_dir can not be empty.")

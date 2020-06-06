@@ -39,13 +39,13 @@ class TaskModel:
         self._init()
 
     def _init(self):
-        self.task_model, model_cache_dir = self._build_task_model(self._model_args, self._user_model_class)
+        self.task_model, model_pretrained_dir = self._build_task_model(self._model_args, self._user_model_class)
         log.info("Loading the task model: " + str(self.task_model))
 
         self.config, self.tokenizer, self.model = self.task_model.load(
             num_labels=self._model_args.num_labels,
             unit_test=self._model_args.unit_test,
-            cache_dir=model_cache_dir
+            cache_dir=model_pretrained_dir
         )
 
         log.info(
@@ -79,9 +79,9 @@ class TaskModel:
         if model_class is not None:
             t_model.model_class = model_class
 
-        model_path = join_path(self._model_args.model_base_dir, t_model.model_path)
-        mode_cache_dir = join_path(self._model_args.model_cache_dir, t_model.model_path) if not os.path.exists(
-            model_path) or modelArgs.use_cache else None
+        model_path = join_path(self._model_args.model_finetuned_dir, t_model.model_path)
+        mode_cache_dir = join_path(self._model_args.model_pretrained_dir, t_model.model_path) if not os.path.exists(
+            model_path) or modelArgs.use_pretrained else None
 
         if not mode_cache_dir:
             t_model.model_path = model_path

@@ -11,11 +11,11 @@ class TestTransformersxTask:
     def test_parse_arg(self):
         assert task_args.model_args.unit_test == False
 
-    def __do_test_task_model(self, use_cache):
+    def __do_test_task_model(self, use_pretrained):
         self.task_args.model_args.unit_test = True
-        self.task_args.model_args.model_base_dir = "models/finetuning"
-        self.task_args.model_args.model_cache_dir = "models/pretrained"
-        self.task_args.model_args.use_cache = use_cache
+        self.task_args.model_args.model_finetuned_dir = "models/finetuning"
+        self.task_args.model_args.model_pretrained_dir = "models/pretrained"
+        self.task_args.model_args.use_pretrained = use_pretrained
         taskModel: TaskModel = TaskModel(self.task_args.model_args)
         assert isinstance(taskModel.config, (BertConfig))
         assert isinstance(taskModel.tokenizer, (BertTokenizer))
