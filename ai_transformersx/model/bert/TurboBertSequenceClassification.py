@@ -53,8 +53,8 @@ class TurboBertForSequenceClassification(nn.Module):
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
     @staticmethod
-    def from_pretrained(model_id_or_path: str, config):
-        torch_model = BertModel.from_pretrained(model_id_or_path)
+    def from_pretrained(model_id_or_path: str, config, **kwargs):
+        torch_model = BertModel.from_pretrained(model_id_or_path, config=config, **kwargs)
         turbo_model = turbo_transformers.BertModelWithPooler.from_torch(torch_model)
         model = TurboBertForSequenceClassification(turbo_model, config)
         return model

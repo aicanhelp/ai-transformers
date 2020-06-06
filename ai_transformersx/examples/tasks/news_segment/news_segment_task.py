@@ -21,9 +21,8 @@ class NewsSegmentTask(ExampleTaskBase):
     args_class = NewsSegmentTaskArguments
 
     def __init__(self, taskArgs: NewsSegmentTaskArguments = None, task_class=None):
-        super().__init__(taskArgs)
+        super().__init__(taskArgs,task_class)
         self._data_processor_args = taskArgs.processor_args
-        self._task_class = task_class
 
     def _compute_metrics(self, p: EvalPrediction) -> Dict:
         preds = np.argmax(p.predictions, axis=1)
