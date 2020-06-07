@@ -57,6 +57,7 @@ class TurboBertForSequenceClassification(nn.Module):
     @staticmethod
     def from_pretrained(model_id_or_path: str, config, **kwargs):
         torch_model = BertModel.from_pretrained(model_id_or_path, config=config, **kwargs)
+        torch_model.to('cuda')
         turbo_model = turbo_transformers.BertModelWithPooler.from_torch(torch_model)
         model = TurboBertForSequenceClassification(turbo_model, config)
         return model
