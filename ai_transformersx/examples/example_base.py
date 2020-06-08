@@ -8,7 +8,8 @@ from .. import *
 class ExampleTaskBase:
     args_class = TaskArguments
 
-    def __init__(self, taskArgs: TaskArguments = None, task_model_class=None):
+    def __init__(self, task_name, taskArgs: TaskArguments = None, task_model_class=None):
+        self._task_name = task_name
         if taskArgs is not None:
             self.task_args = taskArgs
         else:
@@ -16,7 +17,7 @@ class ExampleTaskBase:
         self._task_model_class = task_model_class
 
     def __build_task(self):
-        return TransformerTask(self.task_args, self._data_processor(),
+        return TransformerTask(self._task_name, self.task_args, self._data_processor(),
                                model_class=self._task_model_class,
                                compute_metric=self._compute_metrics)
 

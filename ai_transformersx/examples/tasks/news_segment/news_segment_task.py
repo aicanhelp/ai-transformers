@@ -21,7 +21,7 @@ class NewsSegmentTask(ExampleTaskBase):
     args_class = NewsSegmentTaskArguments
 
     def __init__(self, taskArgs: NewsSegmentTaskArguments = None, task_class=None):
-        super().__init__(taskArgs,task_class)
+        super().__init__('news_segment',taskArgs,task_class)
         self._data_processor_args = taskArgs.processor_args
 
     def _compute_metrics(self, p: EvalPrediction) -> Dict:

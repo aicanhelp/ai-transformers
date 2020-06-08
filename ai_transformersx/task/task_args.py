@@ -11,6 +11,19 @@ class TaskArguments:
     data_args: DataArguments = DataArguments()
     training_args: TrainingArguments = TrainingArguments()
 
+    def validate_and_set_task_name(self, task_name):
+        self.task_args.training_args.validate()
+        if not task_name:
+            self.training_args.output_dir = join_path(
+                self.training_args.output_dir,
+                self.model_args.model_name
+            )
+            return
+        self.model_args.model_finetuned_dir = join_path(self.model_args.model_finetuned_dir, task_name)
+        self.task_args.training_args.output_dir = join_path(self.task_args.training_args.output_dir, task_name,
+                                                            self.model_args.model_name)
+
+
 def parse_tasks_args(argsObjOrClass=None):
     if argsObjOrClass is None:
         task_args = TaskArguments()

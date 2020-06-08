@@ -226,23 +226,20 @@ class TaskTrainer:
 
 
 class TransformerTask:
-    def __init__(self, task_args: TaskArguments,
+    def __init__(self, task_name, task_args: TaskArguments,
                  dataProcessor, model_class=None, compute_metric=None):
         log.info("Create a TransformerTask with arguments: ")
         log.info(json.dumps(task_args, default=lambda obj: obj.__dict__, indent=True))
 
         self.task_args = task_args
+        self.task_args.validate_and_set_task_name(task_name)
+        self._training_args = task_args.training_args
+
         self._taskModel = TaskModel(task_args.model_args, model_class)
         self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessor,
                                   task_args.training_args.local_rank)
-        self.task_args.training_args.validate()
-        self.task_args.training_args.output_dir = join_path(
-            self.task_args.training_args.output_dir,
-            self.task_args.model_args.model_name
-        )
         self._taskTrainer = TaskTrainer(task_args.training_args, self._taskModel,
                                         self._taskData, compute_metric)
-        self._training_args = task_args.training_args
 
     def _log_task_start(self):
         log.warning(
@@ -280,4 +277,4 @@ class TransformerTask:
 
 class DefaultTask(TransformerTask):
     def __init__(self, dataProcessorClass, model_class=None, compute_metric=None):
-        super().__init__(parse_tasks_args(), dataProcessorClass, model_class, compute_metric)
+        super().__init__("default", parse_tasks_args(), dataProcessorClass, model_class, compute_metric)
