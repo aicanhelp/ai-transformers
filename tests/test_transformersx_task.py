@@ -42,6 +42,7 @@ class TestTransformersxTask:
         self.task_args.model_args.model_pretrained_dir = test_path
         task_model = self.__do_test_task_model(False)
         assert not task_model.model_path.startswith("models/finetuning")
+        rmtree(test_path)
 
 
     def test_parse_task_arguments(self):
