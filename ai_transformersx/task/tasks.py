@@ -50,10 +50,9 @@ class TaskModel:
 
         log.info(
             "Loaded task model, config: {}, tokenizer: {}, "
-            "model: {}, config:{} ".format(type(self.config),
-                                           type(self.tokenizer),
-                                           type(self.model),
-                                           str(self.config.get_config_dict()))
+            "model: {}".format(str(self.config),
+                               type(self.tokenizer),
+                               type(self.model))
         )
 
         self._freeze_parameters()
