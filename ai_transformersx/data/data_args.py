@@ -5,6 +5,7 @@ from ..transformersx_base import *
 class DataArguments:
     task_name: str = field("", "the task name.")
 
+    data_dir: str = field('', 'input the data dir for processing')
     model_mode_for_data: str = field("classification", "the model of model: classification or regression")
 
     ##todo: refactor to use the max_position_embeddings of the config of model
