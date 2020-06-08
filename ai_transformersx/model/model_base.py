@@ -63,25 +63,33 @@ class ModelTaskType:
         return [f.name for f in fields(ModelTaskType)]
 
 
+def _check_and_rename_pretrained_model_file(pretrained_model_dir, model_id, file_name, use_cdn):
+    target_file_path = join_path(pretrained_model_dir, model_id, file_name)
+    if os.path.exists(target_file_path):
+        return True
+    file_url = hf_bucket_url(model_id, file_name, use_cdn=use_cdn)
+    file_dir_path = join_path(pretrained_model_dir, model_id)
+    url_file_name = url_to_filename(file_url)
+
+    matching_files = [
+        file
+        for file in fnmatch.filter(os.listdir(file_dir_path), url_file_name + ".*")
+        if not file.endswith(".json") and not file.endswith(".lock")
+    ]
+    if len(matching_files) > 0:
+        found_file_name = join_path(file_dir_path, matching_files[-1])
+        os.rename(found_file_name, target_file_path)
+        return True
+    return False
+
+
 def _check_and_rename_pretrained_model(pretrained_model_dir, model_id, tokenizer: PreTrainedTokenizer):
     model_files = [CONFIG_NAME, WEIGHTS_NAME, ADDED_TOKENS_FILE, SPECIAL_TOKENS_MAP_FILE, TOKENIZER_CONFIG_FILE]
     model_files.extend(tokenizer.vocab_files_names.values())
     for file_name in model_files:
-        target_file_path = join_path(pretrained_model_dir, model_id, file_name)
-        if os.path.exists(target_file_path):
+        if _check_and_rename_pretrained_model_file(pretrained_model_dir, model_id, file_name, False):
             continue
-        file_url = hf_bucket_url(model_id, file_name, False)
-        file_dir_path = join_path(pretrained_model_dir, model_id)
-        url_file_name = url_to_filename(file_url)
-
-        matching_files = [
-            file
-            for file in fnmatch.filter(os.listdir(file_dir_path), url_file_name + ".*")
-            if not file.endswith(".json") and not file.endswith(".lock")
-        ]
-        if len(matching_files) > 0:
-            found_file_name = join_path(file_dir_path, matching_files[-1])
-            os.rename(found_file_name, target_file_path)
+        _check_and_rename_pretrained_model_file(pretrained_model_dir, model_id, file_name, True)
 
 
 @dataclass(init=True)
