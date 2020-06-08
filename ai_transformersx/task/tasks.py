@@ -55,14 +55,9 @@ class TaskModel:
         self._freeze_parameters()
 
     def _freeze_parameters(self):
-        if self.model is None:
-            return
-
-        if self._model_args.freeze_parameter and hasattr(self.model, self._model_args.freeze_parameter):
-            freeze_model = eval("self.model." + self._model_args.freeze_parameter)
-            if hasattr(freeze_model, "parameters"):
-                for param in freeze_model.parameters():
-                    param.requires_grad = False
+        # Currently, freezing the main paramerter is supported only
+        self._freeze_weights_main()
+        # self._freeze_parameters_others()
 
         if hasattr(self.model, 'num_parameters'):
             log.info("num params:" + str(self.model.num_parameters()))
@@ -72,6 +67,25 @@ class TaskModel:
             log.info("Model Parameters Details: ")
             for name, param in self.model.named_parameters():
                 log.info("{}:{}".format(name, param.size()))
+
+    def _freeze_weights_main(self):
+        if self.model is None or not self._model_args.freeze_main:
+            return
+
+        main_parameters = eval("self.model." + self.task_model.main_parameter)
+        if hasattr(main_parameters, "parameters"):
+            for param in main_parameters.parameters():
+                param.requires_grad = False
+
+    def _freeze_weights_others(self):
+        if self.model is None:
+            return
+
+        if self._model_args.freeze_parameter and hasattr(self.model, self._model_args.freeze_parameter):
+            freeze_model = eval("self.model." + self._model_args.freeze_parameter)
+            if hasattr(freeze_model, "parameters"):
+                for param in freeze_model.parameters():
+                    param.requires_grad = False
 
     def _build_task_model(self, modelArgs, model_class=None):
         mode_cache_dir = modelArgs.model_pretrained_dir if not modelArgs.not_use_pretrained else modelArgs.model_finetuned_dir

@@ -99,6 +99,7 @@ class TaskModel:
     model_path: str = None
     model_class: type = None
     tokenizer: type = None
+    main_parameter: str = None
 
     def load(self, **kwargs):
         cache_dir = kwargs['cache_dir']
@@ -122,12 +123,14 @@ class TaskModel:
         return config, tokenizer, model
 
     def renew(self, model_class):
-        return TaskModel(self.model_type, self.config, self.model_path, model_class, self.tokenizer)
+        return TaskModel(self.model_type, self.config, self.model_path,
+                         model_class, self.tokenizer,
+                         self.main_parameter)
 
 
-def model_func(model_type, config, tokenizer):
+def model_func(model_type, config, tokenizer, main_parameter=None):
     def generate_model(model_path):
-        return TaskModel(model_type, config, model_path, None, tokenizer)
+        return TaskModel(model_type, config, model_path, None, tokenizer, main_parameter)
 
     return generate_model
 

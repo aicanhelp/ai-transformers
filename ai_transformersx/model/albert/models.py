@@ -7,8 +7,8 @@ from transformers.tokenization_albert import AlbertTokenizer
 
 from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
 
-default_model = model_func(ModelType.albert, AlbertConfig, AlbertTokenizer)
-bert_model = model_func(ModelType.albert, AlbertConfig, BertTokenizer)
+default_model = model_func(ModelType.albert, AlbertConfig, AlbertTokenizer, 'albert')
+bert_model = model_func(ModelType.albert, AlbertConfig, BertTokenizer, 'albert')
 
 '''
 Attention please, some albert models are using BertTokenizer.

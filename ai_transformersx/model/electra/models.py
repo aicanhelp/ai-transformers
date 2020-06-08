@@ -8,8 +8,8 @@ from .modelingx_electra import ElectraForSequenceClassificationX
 
 from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
 
-default_model = model_func(ModelType.electra, ElectraConfig, ElectraTokenizer)
-fast_model = model_func(ModelType.electra, ElectraConfig, ElectraTokenizerFast)
+default_model = model_func(ModelType.electra, ElectraConfig, ElectraTokenizer, 'electra')
+fast_model = model_func(ModelType.electra, ElectraConfig, ElectraTokenizerFast, 'electra')
 
 
 class Electra_Task_Models_Base(TaskModels):
@@ -34,6 +34,7 @@ class Electra_Task_Models(Electra_Task_Models_Base):
         (ModelTaskType.seq_cls, ElectraForSequenceClassificationX),
         (ModelTaskType.token_cls, ElectraForTokenClassification)
     ])
+
 
 if is_tf_available():
     class TFElectra_Task_Models(Electra_Task_Models_Base):

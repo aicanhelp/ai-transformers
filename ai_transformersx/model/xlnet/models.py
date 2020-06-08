@@ -7,7 +7,7 @@ from transformers.tokenization_xlnet import XLNetTokenizer
 
 from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
 
-default_model = model_func(ModelType.electra, XLNetConfig, XLNetTokenizer)
+default_model = model_func(ModelType.electra, XLNetConfig, XLNetTokenizer, 'xlnet')
 
 
 class XLNet_Task_Models_Base(TaskModels):

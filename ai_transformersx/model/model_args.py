@@ -8,14 +8,15 @@ class ModelArguments:
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
     model_finetuned_dir: str = field("/app/models/finetuning",
-                                "The 'model_base_dir' generally is for the finetuned models."
-                                "Generally, the model is loaded from 'model_finetuned_dir' firstly."
-                                " If the model cannot be found, it will be loaded from the model_pretrained_dir.")
+                                     "The 'model_base_dir' generally is for the finetuned models."
+                                     "Generally, the model is loaded from 'model_finetuned_dir' firstly."
+                                     " If the model cannot be found, it will be loaded from the model_pretrained_dir.")
 
     model_pretrained_dir: str = field("/app/models/pretrained",
-                                 "This folder is for the pretrained models downloaded from Internet.")
+                                      "This folder is for the pretrained models downloaded from Internet.")
 
-    not_use_pretrained: bool = field(False, "Whether use the model in model_pretrained_dir. Generally, for training, it should be False")
+    not_use_pretrained: bool = field(False,
+                                     "Whether use the model in model_pretrained_dir. Generally, for training, it should be False")
 
     model_name: str = field("bert-base-chinese", "the name of model: " + str(ALL_TASK_MODEL_PATHS))
 
@@ -29,7 +30,8 @@ class ModelArguments:
 
     language: str = field("cn", "the language of model: cn, en")
 
-    freeze_parameter: str = field("bert", "The parameter name for freeze")
+    freeze_parameters: str = field("bert", "The parameters list for freeze")
+    freeze_main: bool = field(False, 'whether freeze main parameter')
 
     num_labels: int = field(2, "the number of label")
 

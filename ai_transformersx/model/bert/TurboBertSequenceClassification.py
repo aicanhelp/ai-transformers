@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from torch.nn import MSELoss, CrossEntropyLoss
 from transformers import BertModel
@@ -58,6 +59,6 @@ class TurboBertForSequenceClassification(nn.Module):
     def from_pretrained(model_id_or_path: str, config, **kwargs):
         torch_model = BertModel.from_pretrained(model_id_or_path, config=config, **kwargs)
 
-        turbo_model = turbo_transformers.BertModelWithPooler.from_torch(torch_model, device='cuda:0')
+        turbo_model = turbo_transformers.BertModelWithPooler.from_torch(torch_model, device=torch.device('cuda:0'))
         model = TurboBertForSequenceClassification(turbo_model, config)
         return model

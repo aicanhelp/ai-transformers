@@ -7,8 +7,8 @@ from transformers.tokenization_roberta import RobertaTokenizer, RobertaTokenizer
 
 from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
 
-default_model = model_func(ModelType.roberta, RobertaConfig, RobertaTokenizer)
-fast_model = model_func(ModelType.roberta, RobertaConfig, RobertaTokenizerFast)
+default_model = model_func(ModelType.roberta, RobertaConfig, RobertaTokenizer, 'roberta')
+fast_model = model_func(ModelType.roberta, RobertaConfig, RobertaTokenizerFast, 'roberta')
 
 
 class Roberta_Task_Models_Base(TaskModels):
