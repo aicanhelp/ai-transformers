@@ -39,13 +39,13 @@ class TaskModel:
         self._init()
 
     def _init(self):
-        self.task_model, model_pretrained_dir = self._build_task_model(self._model_args, self._user_model_class)
-        log.info("Loading the task model: " + str(self.task_model))
+        self.task_model, model_cache_dir = self._build_task_model(self._model_args, self._user_model_class)
+        log.info("Loading the task model from {}, {}".format(model_cache_dir, str(self.task_model)))
 
         self.config, self.tokenizer, self.model = self.task_model.load(
             num_labels=self._model_args.num_labels,
             unit_test=self._model_args.unit_test,
-            cache_dir=model_pretrained_dir
+            cache_dir=model_cache_dir
         )
 
         log.info(
@@ -74,6 +74,17 @@ class TaskModel:
                 log.info("{}:{}".format(name, param.size()))
 
     def _build_task_model(self, modelArgs, model_class=None):
+        mode_cache_dir = modelArgs.model_pretrained_dir if not modelArgs.not_use_pretrained else modelArgs.model_finetuned_dir
+
+        if not os.path.exists(join_path(mode_cache_dir, modelArgs.model_name)):
+            mode_cache_dir = modelArgs.model_pretrained_dir if modelArgs.not_use_pretrained else modelArgs.model_finetuned_dir
+
+        if not os.path.exists(join_path(mode_cache_dir, modelArgs.model_name)):
+            raise ValueError(
+                "Can not find mode {} in {} or {}".format(modelArgs.model_name, modelArgs.model_finetuned_dir,
+                                                          modelArgs.model_pretrained_dir)
+            )
+
         t_model = task_model(model_path=modelArgs.model_name,
                              model_task_type=modelArgs.model_task_type,
                              language=modelArgs.language,
@@ -82,13 +93,6 @@ class TaskModel:
         # use the custom class to replace the model Class
         if model_class is not None:
             t_model.model_class = model_class
-
-        model_path = join_path(self._model_args.model_finetuned_dir, t_model.model_path)
-        mode_cache_dir = join_path(self._model_args.model_pretrained_dir, t_model.model_path) if not os.path.exists(
-            model_path) or not modelArgs.not_use_pretrained else None
-
-        if not mode_cache_dir:
-            t_model.model_path = model_path
 
         log.info("Built task model: {}".format(str(t_model)))
 

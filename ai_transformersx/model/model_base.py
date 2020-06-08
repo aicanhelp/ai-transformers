@@ -1,5 +1,12 @@
+import fnmatch
+
 from dataclasses import dataclass, fields
 from ai_harness import harnessutils as aiutils
+from ai_harness.fileutils import join_path
+import os
+from transformers.file_utils import WEIGHTS_NAME, CONFIG_NAME, url_to_filename, hf_bucket_url
+from transformers.tokenization_utils import ADDED_TOKENS_FILE, SPECIAL_TOKENS_MAP_FILE, TOKENIZER_CONFIG_FILE, \
+    PreTrainedTokenizer
 
 log = aiutils.getLogger('task')
 
@@ -56,6 +63,27 @@ class ModelTaskType:
         return [f.name for f in fields(ModelTaskType)]
 
 
+def _check_and_rename_pretrained_model(pretrained_model_dir, model_id, tokenizer: PreTrainedTokenizer):
+    model_files = [CONFIG_NAME, WEIGHTS_NAME, ADDED_TOKENS_FILE, SPECIAL_TOKENS_MAP_FILE, TOKENIZER_CONFIG_FILE]
+    model_files.extend(tokenizer.vocab_files_names.values())
+    for file_name in model_files:
+        target_file_path = join_path(pretrained_model_dir, model_id, file_name)
+        if os.path.exists(target_file_path):
+            continue
+        file_url = hf_bucket_url(model_id, file_name, False)
+        file_dir_path = join_path(pretrained_model_dir, model_id)
+        url_file_name = url_to_filename(file_url)
+
+        matching_files = [
+            file
+            for file in fnmatch.filter(os.listdir(file_dir_path), url_file_name + ".*")
+            if not file.endswith(".json") and not file.endswith(".lock")
+        ]
+        if len(matching_files) > 0:
+            found_file_name = join_path(file_dir_path, matching_files[-1])
+            os.rename(found_file_name, target_file_path)
+
+
 @dataclass(init=True)
 class TaskModel:
     model_type: str = None
@@ -66,22 +94,20 @@ class TaskModel:
 
     def load(self, **kwargs):
         cache_dir = kwargs['cache_dir']
+        _check_and_rename_pretrained_model(cache_dir, self.model_path, self.tokenizer)
+        model_path = join_path(cache_dir, self.model_path)
+
+        self.model_path = model_path
         config = self.config.from_pretrained(
-            self.model_path,
-            num_labels=kwargs['num_labels'],
-            cache_dir=cache_dir,
-            local_files_only=True
+            model_path,
+            num_labels=kwargs['num_labels']
         )
-        tokenizer = self.tokenizer.from_pretrained(self.model_path,
-                                                   cache_dir=cache_dir,
-                                                   local_files_only=True)
+        tokenizer = self.tokenizer.from_pretrained(model_path)
         unit_test = kwargs['unit_test']
         if not unit_test:
             model = self.model_class.from_pretrained(
-                self.model_path,
-                config=config,
-                cache_dir=cache_dir,
-                local_files_only=True
+                model_path,
+                config=config
             )
         else:
             model = None
