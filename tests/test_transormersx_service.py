@@ -1,4 +1,4 @@
-from ai_transformersx.service.task_service import TaskService, app
+from ai_transformersx.service.task_service import TaskService
 from dataclasses import dataclass, asdict, field, fields
 
 service = TaskService()
@@ -14,7 +14,7 @@ class ResponseData:
     content: str = field(default="test")
 
 
-@service.task('/', RequestData, ResponseData)
+@service.task('/test', RequestData, ResponseData)
 def task_request(request_json):
     print(request_json)
     return ResponseData("test")
@@ -23,7 +23,7 @@ def task_request(request_json):
 class TestDemoService():
 
     def test_request(self):
-        request, response = app.test_client.post('/', data='{"content":"content"}')
+        request, response = service.app.test_client.post('/test', data='{"content":"content"}')
         assert request.json['content'] == 'content' and response.json['content'] == 'test'
 
     def test_run_service(self):
