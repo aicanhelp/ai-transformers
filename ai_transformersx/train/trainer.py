@@ -152,6 +152,7 @@ class Trainer:
         self.compute_metrics = compute_metrics
         self.prediction_loss_only = prediction_loss_only
         self.optimizers = optimizers
+
         if tb_writer is not None:
             self.tb_writer = tb_writer
         elif is_tensorboard_available() and self.args.local_rank in [-1, 0]:
@@ -692,11 +693,14 @@ class Trainer:
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
+            has_guid = False
             for k, v in inputs.items():
                 if k != 'guid':
                     inputs[k] = v.to(self.args.device)
                 else:
-                    guids.append(v)
+                    has_guid = True
+            if has_guid:
+                guids.extend(inputs.pop('guid'))
 
             with torch.no_grad():
                 outputs = model(**inputs)

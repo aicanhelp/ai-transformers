@@ -124,6 +124,9 @@ class TaskModel:
             "acc_and_f1": (acc + f1) / 2,
         }
 
+    def predict(self, *input):
+        return self.model(*input)
+
     def compute_metrics(self, p: EvalPrediction) -> Dict:
         if self._model_args.model_mode == ModelMode.classification:
             preds = np.argmax(p.predictions, axis=1)
@@ -199,6 +202,7 @@ class TaskTrainer:
             # so that you can share your model easily on huggingface.co/models =)
             if self._trainer.is_world_master():
                 self._taskModel.tokenizer.save_pretrained(self._training_args.output_dir)
+
         return self
 
     def eval(self):
@@ -281,3 +285,11 @@ class TransformerTask:
 class DefaultTask(TransformerTask):
     def __init__(self, dataProcessorClass, model_class=None, compute_metric=None):
         super().__init__("default", parse_tasks_args(), dataProcessorClass, model_class, compute_metric)
+
+
+def get_transformers_model(models_dir, model_name):
+    modelArgs: ModelArguments = ModelArguments()
+    modelArgs.model_name = model_name
+    modelArgs.model_finetuned_dir = models_dir
+    modelArgs.not_use_pretrained = True
+    return TaskModel(modelArgs)

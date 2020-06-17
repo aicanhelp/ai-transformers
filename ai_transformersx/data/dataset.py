@@ -135,21 +135,24 @@ def _glue_convert_examples_to_features(
     if max_length is None:
         max_length = tokenizer.max_len
 
-    if task is not None:
-        if label_list is None:
-            label_list = processor.get_labels()
-            log.info("Using label list %s for task %s" % (label_list, task))
+    has_label = (examples[0].label is not None)
 
-    label_map = {label: i for i, label in enumerate(label_list)}
+    if has_label:
+        if task is not None:
+            if label_list is None:
+                label_list = processor.get_labels()
+                log.info("Using label list %s for task %s" % (label_list, task))
 
-    def label_from_example(example: InputExample) -> Union[int, float]:
-        if output_mode == "classification":
-            return label_map[example.label]
-        elif output_mode == "regression":
-            return float(example.label)
-        raise KeyError(output_mode)
+        label_map = {label: i for i, label in enumerate(label_list)}
 
-    labels = [label_from_example(example) for example in examples]
+        def label_from_example(example: InputExample) -> Union[int, float]:
+            if output_mode == "classification":
+                return label_map[example.label]
+            elif output_mode == "regression":
+                return float(example.label)
+            raise KeyError(output_mode)
+
+        labels = [label_from_example(example) for example in examples]
 
     # log.info("1. Tokenizer encoding examples .... total: " + str(len(examples)))
     # epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)
@@ -168,8 +171,9 @@ def _glue_convert_examples_to_features(
 
     for i, example in enumerate(epoch_iterator):
         inputs = {k: batch_encoding[k][i] for k in batch_encoding}
+        label = labels[i] if has_label else None
 
-        feature = InputFeatures(**inputs, label=labels[i], guid=i if evaluate else None)
+        feature = InputFeatures(**inputs, label=label, guid=i if evaluate else None)
 
         features.append(feature)
 

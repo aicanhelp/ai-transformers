@@ -21,7 +21,7 @@ class NewsSegmentTask(ExampleTaskBase):
     args_class = NewsSegmentTaskArguments
 
     def __init__(self, taskArgs: NewsSegmentTaskArguments = None, task_class=None):
-        super().__init__('news_segment',taskArgs,task_class)
+        super().__init__('news_segment', taskArgs, task_class)
         self._data_processor_args = taskArgs.processor_args
 
     def _compute_metrics(self, p: EvalPrediction) -> Dict:
@@ -41,17 +41,26 @@ class NewsSegmentTask(ExampleTaskBase):
     def _data_processor(self):
         return NewsDataProcessor(self._data_processor_args)
 
-    def predict(self, article: str, context_min_len=50, sentence_min_len=10):
-        '''
-
-        '''
-        segment = NewsExampleSegment(article, context_min_len, sentence_min_len)
+    def predict(self, article: str = None):
+        if article:
+            segment = NewsExampleSegment(article, context_min_len=self._data_processor_args.context_min_len,
+                                         sentence_min_len=self._data_processor_args.sentence_min_len,
+                                         check_min_anyway=self._data_processor_args.check_min_anyway)
+        else:
+            segment = NewsExampleSegment.from_file(join_path(self._data_processor_args.data_dir, 'dev.txt'),
+                                                   context_min_len=self._data_processor_args.context_min_len,
+                                                   sentence_min_len=self._data_processor_args.sentence_min_len,
+                                                   check_min_anyway=self._data_processor_args.check_min_anyway,
+                                                   line_sentence=False)
         self.task_args.data_args.predict = True
-        predict_result = TransformerTask(self.task_args, PredictDataProcessor(segment),
-                                         model_class=self._task_class
-                                         ).predict()
-        seperate_index = predict_result.guids * (predict_result.predictions == 0)
-        return segment, seperate_index
+
+        p = TransformerTask('news_segment', self.task_args, PredictDataProcessor(segment)).predict()
+
+        preds = np.argmax(p.predictions, axis=1)
+        context_indexes = p.guids * (preds == 1)
+        separate_indexes = [segment.contexts[i - 1][1] for i in context_indexes if i != 0]
+
+        return segment, separate_indexes
 
 
 if is_turbo_available():
@@ -60,4 +69,4 @@ if is_turbo_available():
 
     class TurboNewsSegmentTask(NewsSegmentTask):
         def __init__(self, taskArgs: NewsSegmentTaskArguments = None):
-            super().__init__(taskArgs, TurboBertForSequenceClassification)
+            super().__init__('turbo_news_segment', taskArgs, TurboBertForSequenceClassification)

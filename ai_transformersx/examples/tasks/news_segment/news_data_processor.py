@@ -10,14 +10,16 @@ class NewsDataArguments:
     save_mid: bool = field(True, 'whether cache the middle data for check')
     context_min_len: int = field(128, 'context min length')
     sentence_min_len: int = field(10, 'sentence min length')
+    check_min_anyway: int = field(True, 'whether check the sentence min length anyway')
     positive_mode: int = field(0, 'positive mode')
     negative_mode: int = field(0, 'negative mode')
     bar_size: int = field(1000, 'the progress bar size')
 
 
 class SentenceSplitter:
-    def __init__(self, sentence_min_len=10):
+    def __init__(self, sentence_min_len=10, check_min_anyway=False):
         self._min_len = sentence_min_len
+        self._check_min_anyway = check_min_anyway
 
     def split(self, segment: str):
         t = segment.replace('\n', '')
@@ -28,7 +30,7 @@ class SentenceSplitter:
         l1 = len(sentences[i - 1])
         while i < length:
             l2 = len(sentences[i])
-            if l1 > self._min_len or l1 != l2:
+            if l1 > self._min_len or (l1 != l2 and not self._check_min_anyway):
                 sents.append(sentences[i - 1])
                 if i == length - 1:
                     sents.append(sentences[i])
@@ -48,14 +50,14 @@ class SentenceSplitter:
 
 
 class SentencesSegment():
-    def __init__(self, segment: str = None, sentence_min_len=10, exclude_empty_line=True):
+    def __init__(self, segment: str = None, sentence_min_len=10, exclude_empty_line=True, check_min_anyway=False):
         self._exclude_empty_line = exclude_empty_line
-        self._sentences = self._make_sentences(segment, sentence_min_len)
+        self._sentences = self._make_sentences(segment, sentence_min_len, check_min_anyway)
         self._size = len(self._sentences)
 
-    def _make_sentences(self, segment: str, sentence_min_len):
+    def _make_sentences(self, segment: str, sentence_min_len, check_min_anyway=False):
         if not segment: return []
-        return SentenceSplitter(sentence_min_len).split(segment)
+        return SentenceSplitter(sentence_min_len, check_min_anyway).split(segment)
 
     def add_new_sentence(self, sentence: str):
         sentence = sentence.strip()
@@ -94,8 +96,9 @@ class SentencesSegment():
 
 
 class NewsExampleSegment(SentencesSegment):
-    def __init__(self, segment: str, context_min_len=50, sentence_min_len=10):
-        super().__init__(segment, sentence_min_len)
+    def __init__(self, segment: str, context_min_len=50, sentence_min_len=10, exclude_empty_line=True,
+                 check_min_anyway=False):
+        super().__init__(segment, sentence_min_len, exclude_empty_line, check_min_anyway)
         self._context_min_len = context_min_len
         self.contexts = []
         self._make_contexts()
@@ -132,6 +135,25 @@ class NewsExampleSegment(SentencesSegment):
     def example(self, c_start, c_end):
         return self.context(c_start, c_end), self.sentence(c_end)
 
+    @staticmethod
+    def from_file(file_path, context_min_len=50, sentence_min_len=10,
+                  exclude_empty_line=True,
+                  check_min_anyway=False, line_sentence=True):
+        if line_sentence:
+            segment = NewsExampleSegment(None, context_min_len, sentence_min_len, exclude_empty_line, check_min_anyway)
+            FileLineReader(bar_step_size=-1, exclude_empty_line=True).pipe(
+                lambda input, result: segment.add_new_sentence(input)
+            ).read(file_path)
+            return segment
+
+        content = []
+        FileLineReader(bar_step_size=-1, exclude_empty_line=True).pipe(
+            lambda input, result: content.append(input)
+        ).read(file_path)
+        return NewsExampleSegment("".join(content), context_min_len, sentence_min_len,
+                                  exclude_empty_line,
+                                  check_min_anyway)
+
 
 class NewsExampleGenerator():
     def __init__(self, config: NewsDataArguments, type='train'):
@@ -143,8 +165,8 @@ class NewsExampleGenerator():
 
     def add_line(self, new_segment_str: str):
         new_segment = NewsExampleSegment(new_segment_str,
-                                         self._config.context_min_len,
-                                         self._config.sentence_min_len)
+                                         context_min_len=self._config.context_min_len,
+                                         sentence_min_len=self._config.sentence_min_len)
         if not new_segment.size():
             return self
 
@@ -275,3 +297,4 @@ class PredictDataProcessor(DataProcessor):
 
     def data_dir(self):
         return None
+
