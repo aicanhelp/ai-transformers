@@ -34,7 +34,7 @@ class SentimentDataProcessor(DataProcessor):
 
 class SentimentTask(ExampleTaskBase):
     def __init__(self, taskArgs: TaskArguments = None):
-        self.task_args.model_args.num_labels = 4
+        taskArgs.model_args.num_labels = 4
         super().__init__('sentiment', taskArgs)
 
     def _data_processor(self):

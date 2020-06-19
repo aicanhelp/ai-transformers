@@ -50,7 +50,7 @@ class TaskModel:
 
         log.info(
             "Loaded task model, config: {}, tokenizer: {}, "
-            "model: {}".format(str(self.config),
+            "model: {}".format(self.config.to_json_string(False),
                                type(self.tokenizer),
                                type(self.model))
         )
