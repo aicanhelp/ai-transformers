@@ -51,7 +51,7 @@ class TrainerBase:
     def is_apex_available(self):
         return self._has_apex
 
-    if is_tpu_available():
+    if _has_tpu:
         import torch_xla.core.xla_model as xm
         import torch_xla.debug.metrics as met
         import torch_xla.distributed.parallel_loader as pl

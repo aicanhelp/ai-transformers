@@ -2,9 +2,9 @@ from typing import Optional, Union
 
 from transformers.tokenization_utils import BatchEncoding
 
-from ai_transformersx import InputExample, InputFeatures
+from .data_models import TaskInputExample, TaskInputFeatures
 from transformers import PreTrainedTokenizer
-from ..transformersx_base import aiutils, log, join_path
+from ..transformersx_base import log
 from tqdm.auto import tqdm, trange
 
 
@@ -18,7 +18,7 @@ class TaskDataConverter:
         self._label_list = label_list
         self._label_map = {label: i for i, label in enumerate(self._label_list)}
 
-    def _label_from_example(self, example: InputExample) -> Union[int, float]:
+    def _label_from_example(self, example: TaskInputExample) -> Union[int, float]:
         if self._classification:
             return self._label_map[example.label]
         else:
@@ -54,7 +54,7 @@ class TaskDataConverter:
 
         for i, example in enumerate(epoch_iterator):
             inputs = {k: batch_encoding[k][i] for k in batch_encoding}
-            feature = InputFeatures(**inputs, label=labels[i] if labels else None, guid=i if not labels else None)
+            feature = TaskInputFeatures(**inputs, label=labels[i] if labels else None, guid=i if not labels else None)
             features.append(feature)
         return features
 

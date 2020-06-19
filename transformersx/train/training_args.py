@@ -4,7 +4,6 @@ from typing import Optional, Tuple, Dict, Any
 
 import torch
 from transformers import is_torch_available
-from transformers.file_utils import torch_required, cached_property
 
 from ..transformersx_base import *
 

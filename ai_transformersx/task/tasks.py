@@ -234,7 +234,7 @@ class TaskTrainer:
 
 class TransformerTask:
     def __init__(self, task_name, task_args: TaskArguments,
-                 dataProcessor, model_class=None, compute_metric=None):
+                 dataProcessor=None, model_class=None, compute_metric=None):
         log.info("Create a TransformerTask with arguments: ")
         log.info(json.dumps(task_args, default=lambda obj: obj.__dict__, indent=True))
 
@@ -278,8 +278,13 @@ class TransformerTask:
     def single_predict(self, *input):
         return self._taskModel.model(*input)
 
-    def predict(self) -> PredictionOutput:
-        return self._taskTrainer.predict()
+    def predict(self, data_processor=None) -> PredictionOutput:
+        dataset = TaskDataset(self.task_args.data_args,
+                              tokenizer=self._taskModel.tokenizer,
+                              processor=data_processor,
+                              evaluate=True) if data_processor else None
+
+        return self._taskTrainer.predict(dataset)
 
 
 class DefaultTask(TransformerTask):

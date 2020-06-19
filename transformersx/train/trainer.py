@@ -49,7 +49,7 @@ class TaskTrainStep(TrainerBase):
         self._scheduler = optimizers.get_scheduler()
         self._total_steps = total_steps
 
-    def _training_step(self, inputs: Dict[str, torch.Tensor]) -> float:
+    def _step_backward(self, inputs: Dict[str, torch.Tensor]) -> float:
         self._model.train()
         for k, v in inputs.items():
             inputs[k] = v.to(self._args.device)
@@ -92,8 +92,8 @@ class TaskTrainStep(TrainerBase):
         self._scheduler.step()
         self._model.zero_grad()
 
-    def step(self, step, inputs: Dict[str, torch.Tensor]) -> (float, bool):
-        loss = self._training_step(inputs)
+    def execute(self, step, inputs: Dict[str, torch.Tensor]) -> (float, bool):
+        loss = self._step_backward(inputs)
 
         if not self._is_step(step): return loss, False
 
@@ -124,17 +124,21 @@ class TaskTrainEpoch(TrainerBase):
             if self._train_counter.check_step_for_skip():
                 continue
 
-            loss, do_step = self._trainer_step.step(step, inputs)
-            self._train_counter.on_train_step(step, self.epoch_len, loss)
+            loss, do_step = self._trainer_step.execute(step, inputs)
+            self._process_step(step, do_step, loss)
 
-            if do_step and self.is_local_master():
-                self._process_step(self.epoch, self._train_counter.tr_loss,
-                                   self._train_counter.logging_loss)
-                self._train_counter.after_process_step()
         self.epoch_iterator.close()
         self.task_context.trainer_logger.log_train_epoch()
 
-    def _process_step(self, epoch, tr_loss, logging_loss):
+    def _process_step(self, step, do_step, loss):
+        self._train_counter.on_train_step(step, self.epoch_len, loss)
+
+        if do_step and self.is_local_master():
+            self._process_step(self.epoch, self._train_counter.tr_loss,
+                               self._train_counter.logging_loss)
+            self._train_counter.after_process_step()
+
+    def _process_step_loss(self, epoch, tr_loss, logging_loss):
         if self.task_context.trainer_logger.is_need_log_step(self._train_counter.global_step):
             logs: Dict[str, float] = {}
             logs["loss"] = (tr_loss - logging_loss) / self._train_counter.logging_steps
@@ -165,7 +169,7 @@ class TaskTrainLoop(TrainerBase):
         for epoch in train_iterator:
             if not self._train_counter.check_step_for_break(train_iterator):
                 break
-            TaskTrainEpoch(epoch, self.task_context)
+            TaskTrainEpoch(epoch, self.task_context).execute()
 
         train_iterator.close()
         self.task_context.trainer_logger.log_train_end()
