@@ -145,7 +145,7 @@ class TaskData:
         self._train_data, self._eval_data = None, None
 
     def train_data(self):
-        if not self._train_data:
+        if not self._train_data and self._processor:
             self._train_data = TaskDataset(self._data_args,
                                            tokenizer=self._tokenizer,
                                            processor=self._processor,
@@ -153,7 +153,7 @@ class TaskData:
         return self._train_data
 
     def eval_data(self):
-        if not self._eval_data:
+        if not self._eval_data and self._processor:
             self._eval_data = TaskDataset(self._data_args,
                                           tokenizer=self._tokenizer,
                                           processor=self._processor,
@@ -244,7 +244,7 @@ class TransformerTask:
 
         self._taskModel = TaskModel(task_args.model_args, model_class)
         self._taskData = TaskData(task_args.data_args, self._taskModel.tokenizer, dataProcessor,
-                                  task_args.training_args.local_rank)
+                                  task_args.training_args.local_rank) if dataProcessor else None
         self._taskTrainer = TaskTrainer(task_args.training_args, self._taskModel,
                                         self._taskData, compute_metric)
 
