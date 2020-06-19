@@ -186,8 +186,8 @@ class TaskTrainer:
         return Trainer(
             model=self._taskModel.model,
             args=self._training_args,
-            train_dataset=self._taskData.train_data() if self._training_args.do_train else None,
-            eval_dataset=self._taskData.eval_data() if self._training_args.do_eval else None,
+            train_dataset=self._taskData.train_data() if self._training_args.do_train and self._taskData else None,
+            eval_dataset=self._taskData.eval_data() if self._training_args.do_eval and self._taskData else None,
             compute_metrics=self._compute_metrics,
         )
 
