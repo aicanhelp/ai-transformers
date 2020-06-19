@@ -13,5 +13,6 @@ class DataArguments:
                                 "The maximum total input sequence length after tokenization. Sequences longer "
                                 "than this will be truncated, sequences shorter will be padded.")
     predict: bool = field(False, "Overwrite the cached training and evaluation sets")
+    show_feature_num: int = field(5, "the number of features for printing after converted")
     overwrite_cache: bool = field(False, "Overwrite the cached training and evaluation sets")
     progress_bar: bool = field(default=True, metadata={"help": "Whether shows the progress_bar"})

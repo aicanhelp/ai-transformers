@@ -85,7 +85,8 @@ class TaskDataset(Dataset):
                     label_list=label_list,
                     output_mode=self.args.model_mode_for_data,
                     progress_bar=args.progress_bar,
-                    evaluate=evaluate
+                    evaluate=evaluate,
+                    num_print=self.args.show_feature_num
                 )
                 if not args.predict and local_rank in [-1, 0]:
                     log.info("Saving features into cached file %s", cached_features_file)
@@ -112,7 +113,8 @@ def _glue_convert_examples_to_features(
         label_list=None,
         output_mode=None,
         progress_bar=False,
-        evaluate=False
+        evaluate=False,
+        num_print=5
 ):
     """
         Loads a data file into a list of ``InputFeatures``
@@ -177,10 +179,11 @@ def _glue_convert_examples_to_features(
 
         features.append(feature)
 
-    for i, example in enumerate(examples[:5]):
-        log.info("*** Example ***")
-        log.info("guid: %s" % (example.guid))
-        log.info("features: %s" % features[i])
+    if num_print > 0:
+        for i, example in enumerate(examples[:num_print]):
+            log.info("*** Example ***")
+            log.info("guid: %s" % (example.guid))
+            log.info("features: %s" % features[i])
 
     return features
 
