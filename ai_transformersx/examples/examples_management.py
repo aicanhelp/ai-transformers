@@ -10,10 +10,7 @@ class ExampleManagement():
                 "task name {} already exists, please use other name.".format(task_name)
             )
         self.TASKS.setdefault(task_name, task_class)
-        if not issubclass(task_class, (ExampleTaskBase)):
-            raise ValueError(
-                "task_class must be the subclass of ExampleTaskBase"
-            )
+
         return self
 
     def register_tasks(self, tasks):

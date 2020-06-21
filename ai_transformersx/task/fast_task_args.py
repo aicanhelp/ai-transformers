@@ -4,8 +4,8 @@ from ..transformersx_base import *
 
 @configclass
 class FastTaskArguments:
-    task_name: str = field('default', 'input the task name')
-    data_dir: str = field("", "the data directory for train,eval,test,label")
+    action: str = field("train", "the task action: train,eval,predict")
+    data_dir: str = field("/app/dataset", "the data directory for train,eval,test,label")
     model_finetuned_dir: str = field("/app/models/finetuning",
                                      "The 'model_base_dir' generally is for the finetuned models."
                                      "Generally, the model is loaded from 'model_finetuned_dir' firstly."

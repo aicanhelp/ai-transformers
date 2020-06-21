@@ -11,20 +11,21 @@ from ..transformersx_base import *
 
 
 class TransformersFastTask():
-    def __int__(self, args: FastTaskArguments):
+    def __int__(self, task_name, args: FastTaskArguments):
         self._args = args
+        self._task_name = task_name
 
 
 class TransformersFastAbsTask(TransformersFastTask):
-    def __int__(self, args: FastTaskArguments):
-        super().__int__(args)
+    def __int__(self, task_name, args: FastTaskArguments):
+        super().__int__(task_name, args)
 
 
 class TransformersFastClsTask(TransformersFastTask):
-    def __int__(self, args: FastTaskArguments):
-        super().__int__(args)
+    def __int__(self, task_name, args: FastTaskArguments):
+        super().__int__(task_name, args)
         self._model_path = join_path(self._args.model_pretrained_dir, self._args.model_name)
-        self._output_dir = join_path(self._args.model_finetuned_dir, self._args.model_name)
+        self._output_dir = join_path(self._args.model_finetuned_dir, task_name, self._args.model_name)
 
     def metrics(self):
         metrics = []
@@ -57,10 +58,10 @@ class TransformersFastClsTask(TransformersFastTask):
 
 
 class TransformersFastLmTask(TransformersFastTask):
-    def __int__(self, args: FastTaskArguments):
-        super().__int__(args)
+    def __int__(self, task_name, args: FastTaskArguments):
+        super().__int__(task_name, args)
 
 
 class TransformersFastQaTask(TransformersFastTask):
-    def __int__(self, args: FastTaskArguments):
-        super().__int__(args)
+    def __int__(self, task_name, args: FastTaskArguments):
+        super().__int__(task_name, args)
