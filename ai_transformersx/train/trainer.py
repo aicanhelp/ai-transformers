@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -14,7 +15,7 @@ from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.distributed import DistributedSampler
-from torch.utils.data.sampler import RandomSampler
+from torch.utils.data.sampler import RandomSampler, SequentialSampler, Sampler
 from tqdm.auto import tqdm, trange
 
 from transformers.data.data_collator import DataCollator, DefaultDataCollator
@@ -97,6 +98,50 @@ def torch_distributed_zero_first(local_rank: int):
         torch.distributed.barrier()
 
 
+class SequentialDistributedSampler(Sampler):
+    """
+    Distributed Sampler that subsamples indicies sequentially,
+    making it easier to collate all results at the end.
+
+    Even though we only use this sampler for eval and predict (no training),
+    which means that the model params won't have to be synced (i.e. will not hang
+    for synchronization even if varied number of forward passes), we still add extra
+    samples to the sampler to make it evenly divisible (like in `DistributedSampler`)
+    to make it easy to `gather` or `reduce` resulting tensors at the end of the loop.
+    """
+
+    def __init__(self, dataset, num_replicas=None, rank=None):
+        if num_replicas is None:
+            if not torch.distributed.is_available():
+                raise RuntimeError("Requires distributed package to be available")
+            num_replicas = torch.distributed.get_world_size()
+        if rank is None:
+            if not torch.distributed.is_available():
+                raise RuntimeError("Requires distributed package to be available")
+            rank = torch.distributed.get_rank()
+        self.dataset = dataset
+        self.num_replicas = num_replicas
+        self.rank = rank
+        self.num_samples = int(math.ceil(len(self.dataset) * 1.0 / self.num_replicas))
+        self.total_size = self.num_samples * self.num_replicas
+
+    def __iter__(self):
+        indices = list(range(len(self.dataset)))
+
+        # add extra samples to make it evenly divisible
+        indices += indices[: (self.total_size - len(indices))]
+        assert len(indices) == self.total_size
+
+        # subsample
+        indices = indices[self.rank * self.num_samples: (self.rank + 1) * self.num_samples]
+        assert len(indices) == self.num_samples
+
+        return iter(indices)
+
+    def __len__(self):
+        return self.num_samples
+
+
 def get_tpu_sampler(dataset: Dataset):
     if xm.xrt_world_size() <= 1:
         return RandomSampler(dataset)
@@ -141,7 +186,7 @@ class Trainer:
             prediction_loss_only:
                 (Optional) in evaluation and prediction, only return the loss
         """
-        self.model = model
+        self.model = model.to(args.device)
         self.args = args
         if data_collator is not None:
             self.data_collator = data_collator
@@ -207,13 +252,19 @@ class Trainer:
 
         eval_dataset = eval_dataset if eval_dataset is not None else self.eval_dataset
 
-        sampler = get_tpu_sampler(eval_dataset) if is_tpu_available() else None
+        if is_tpu_available():
+            sampler = SequentialDistributedSampler(
+                eval_dataset, num_replicas=xm.xrt_world_size(), rank=xm.get_ordinal()
+            )
+        elif self.args.local_rank != -1:
+            sampler = SequentialDistributedSampler(eval_dataset)
+        else:
+            sampler = SequentialSampler(eval_dataset)
 
         data_loader = DataLoader(
             eval_dataset,
             sampler=sampler,
             batch_size=self.args.eval_batch_size,
-            shuffle=False if sampler is not None else True,
             collate_fn=self.data_collator.collate_batch,
         )
 
@@ -224,13 +275,19 @@ class Trainer:
 
     def get_test_dataloader(self, test_dataset: Dataset) -> DataLoader:
         # We use the same batch_size as for eval.
-        sampler = get_tpu_sampler(test_dataset) if is_tpu_available() else None
+        if is_tpu_available():
+            sampler = SequentialDistributedSampler(
+                test_dataset, num_replicas=xm.xrt_world_size(), rank=xm.get_ordinal()
+            )
+        elif self.args.local_rank != -1:
+            sampler = SequentialDistributedSampler(test_dataset)
+        else:
+            sampler = SequentialSampler(test_dataset)
 
         data_loader = DataLoader(
             test_dataset,
             sampler=sampler,
             batch_size=self.args.eval_batch_size,
-            shuffle=False,
             collate_fn=self.data_collator.collate_batch,
         )
 
@@ -297,11 +354,7 @@ class Trainer:
         """
         Helper to get num of examples from a DataLoader, by accessing its Dataset.
         """
-        if is_tpu_available():
-            assert isinstance(dataloader, pl.PerDeviceLoader)
-            return len(dataloader._loader._loader.dataset)
-        else:
-            return len(dataloader.dataset)
+        return len(dataloader.dataset)
 
     def train(self, model_path: Optional[str] = None):
         """
@@ -336,7 +389,6 @@ class Trainer:
             scheduler.load_state_dict(torch.load(os.path.join(model_path, "scheduler.pt")))
 
         model = self.model
-        model.to(self.args.device)
         if self.args.fp16:
             if not is_apex_available():
                 raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
@@ -410,6 +462,9 @@ class Trainer:
                 train_iterator.close()
                 self.global_step = 1
                 break
+            if isinstance(train_dataloader, DataLoader) and isinstance(train_dataloader.sampler, DistributedSampler):
+                train_dataloader.sampler.set_epoch(epoch)
+
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=not self.is_local_master())
             for step, inputs in enumerate(epoch_iterator):
 
@@ -467,7 +522,9 @@ class Trainer:
                             )
 
                             self.save_model(output_dir)
-                            self._rotate_checkpoints()
+
+                            if self.is_world_master():
+                                self._rotate_checkpoints()
                             torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
                             torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
                             logger.info("Saving optimizer and scheduler states to %s", output_dir)
@@ -693,14 +750,11 @@ class Trainer:
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
-            has_guid = False
             for k, v in inputs.items():
                 if k != 'guid':
                     inputs[k] = v.to(self.args.device)
                 else:
-                    has_guid = True
-            if has_guid:
-                guids.extend(inputs.pop('guid'))
+                    guids.extend(inputs.pop('guid'))
 
             with torch.no_grad():
                 outputs = model(**inputs)
@@ -712,14 +766,14 @@ class Trainer:
 
             if not prediction_loss_only:
                 if preds is None:
-                    preds = logits.detach().cpu().numpy()
+                    preds = logits.detach()
                 else:
-                    preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+                    preds = torch.cat((preds, logits.detach()), axis=0)
                 if inputs.get("labels") is not None:
                     if label_ids is None:
-                        label_ids = inputs["labels"].detach().cpu().numpy()
+                        label_ids = inputs["labels"].detach()
                     else:
-                        label_ids = np.append(label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
+                        label_ids = torch.cat((label_ids, inputs["labels"].detach()), axis=0)
 
             if limit_step == 1:
                 logger.info(inputs)
@@ -731,6 +785,11 @@ class Trainer:
             preds = xm.mesh_reduce("eval_preds", preds, np.concatenate)
             label_ids = xm.mesh_reduce("eval_out_label_ids", label_ids, np.concatenate)
 
+        # Finally, turn the aggregated tensors into numpy arrays.
+        if preds is not None:
+            preds = preds.cpu().numpy()
+        if label_ids is not None:
+            label_ids = label_ids.cpu().numpy()
         if self.compute_metrics is not None and preds is not None and label_ids is not None:
             metrics = self.compute_metrics(EvalPrediction(predictions=preds, label_ids=label_ids))
         else:
@@ -744,3 +803,15 @@ class Trainer:
                 metrics[f"eval_{key}"] = metrics.pop(key)
 
         return PredictionOutput(guids=guids, predictions=preds, label_ids=label_ids, metrics=metrics)
+
+    def distributed_concat(self, tensor: torch.Tensor, num_total_examples: int) -> torch.Tensor:
+        assert self.args.local_rank != -1
+
+        output_tensors = [tensor.clone() for _ in range(torch.distributed.get_world_size())]
+        torch.distributed.all_gather(output_tensors, tensor)
+
+        concat = torch.cat(output_tensors, dim=0)
+
+        # truncate the dummy elements added by SequentialDistributedSampler
+        output = concat[:num_total_examples]
+        return output

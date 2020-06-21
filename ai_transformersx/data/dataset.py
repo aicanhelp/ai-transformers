@@ -162,7 +162,12 @@ def _glue_convert_examples_to_features(
     #     [(example.text_a, example.text_b) for example in epoch_iterator], max_length=max_length, pad_to_max_length=True,
     # )
 
-    batch_encoding = batch_encode_plus(tokenizer, examples, max_length, progress_bar)
+    # batch_encoding = batch_encode_plus(tokenizer, examples, max_length, progress_bar)
+
+    batch_encoding = tokenizer.batch_encode_plus(
+        [(example.text_a, example.text_b) for example in examples], max_length=max_length,
+        pad_to_max_length=True,
+    )
 
     log.info("2. Converting Examples to Features .... total: " + str(len(examples)))
     epoch_iterator = tqdm(examples, desc="Iteration", disable=not progress_bar)

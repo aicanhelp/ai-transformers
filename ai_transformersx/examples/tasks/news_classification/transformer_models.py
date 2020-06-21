@@ -47,7 +47,7 @@ class NewsTransformerDataProcessor(DataProcessor):
         return self._config.data_dir
 
 
-class SentimentTask(ExampleTaskBase):
+class NewsClsTask(ExampleTaskBase):
     def __init__(self, taskArgs: TaskArguments = None):
         taskArgs.model_args.num_labels = 10
         super().__init__('news_cls', taskArgs)

@@ -41,6 +41,7 @@ class ExampleTaskBase:
     def _compute_metrics(self, p: EvalPrediction):
         preds = np.argmax(p.predictions, axis=1)
         result = self._acc_and_f1(preds, p.label_ids)
+        log.info(p)
         return result
 
     def _data_processor(self):

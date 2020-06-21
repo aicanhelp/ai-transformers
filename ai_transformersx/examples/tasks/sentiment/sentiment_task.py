@@ -1,5 +1,6 @@
 import pandas as pd
 
+from ai_transformersx.task.fast_tasks import TransformersFastClsTask, FastTaskArguments
 from ..task_base import *
 
 
@@ -39,3 +40,10 @@ class SentimentTask(ExampleTaskBase):
 
     def _data_processor(self):
         return SentimentDataProcessor(self.task_args.data_args)
+
+
+class FastSentimentTask(TransformersFastClsTask):
+    args_class = FastTaskArguments
+
+    def __init__(self, taskArgs: FastTaskArguments = None):
+        super().__init__('fast_sentiment', taskArgs)
