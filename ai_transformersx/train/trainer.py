@@ -750,11 +750,14 @@ class Trainer:
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
+            has_guid = False
             for k, v in inputs.items():
                 if k != 'guid':
                     inputs[k] = v.to(self.args.device)
                 else:
-                    guids.extend(inputs.pop('guid'))
+                    has_guid = True
+            if has_guid:
+                guids.extend(inputs.pop('guid'))
 
             with torch.no_grad():
                 outputs = model(**inputs)

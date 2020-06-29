@@ -61,9 +61,9 @@ class TaskDataset(Dataset):
                     f"Loading features from cached file {cached_features_file} [took %.3f s]", time.time() - start
                 )
             else:
-                log.info(f"Creating features from dataset file at {processor.data_dir()}")
+                log.info(f"Creating features from dataset file")
                 label_list = processor.get_labels()
-                if args.task_name in ["mnli", "mnli-mm"] and tokenizer.__class__ in (
+                if label_list and args.task_name in ["mnli", "mnli-mm"] and tokenizer.__class__ in (
                         RobertaTokenizer,
                         RobertaTokenizerFast,
                         XLMRobertaTokenizer,

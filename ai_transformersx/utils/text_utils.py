@@ -1,11 +1,7 @@
 import re
 
-'''
-    From open source project HarvestText
-'''
 
-
-def cut_sentences(para, language="cn", drop_empty_line=True, strip=True, deduplicate=False, max_len=-1, min_len=-1):
+def cut_sentences(para, language="cn", drop_empty_line=True, strip=True, deduplicate=False, max_len=64, min_len=10):
     '''cut_sentences
 
     :param para: 输入文本
@@ -40,17 +36,38 @@ def cut_sentences(para, language="cn", drop_empty_line=True, strip=True, dedupli
         if drop_empty_line:
             sentences = [sent for sent in sentences if len(sent.strip()) > 0]
 
-        if max_len<1:
-            return sentences
+    return make_sentences_max_length(sentences, max_len, min_len)
 
-        new_sentences = []
-        for s in sentences:
-            news = []
-            while len(s) > max_len + min_len:
-                news.append(s[:max_len])
-                s = s[max_len:]
-            if news:
-                new_sentences.extend(news)
+
+def make_sentences_max_length(sentences, max_len=64, min_len=10):
+    if max_len < 1 and min_len < 1:
+        return sentences
+
+    new_sentences = []
+    for s in sentences:
+        # 拆分长句子，应该进一采用逗号分割
+        if max_len > 0 and len(s) > max_len + min_len:
+            sub_sentences = s.split('，')
+            new_sentences.append(sub_sentences[0])
+            if len(sub_sentences) == 1: continue
+
+            new_sentences[-1] = new_sentences[-1] + '，'
+            for sub_s in sub_sentences[1:-1]:
+                if len(new_sentences[-1]) < max_len:
+                    new_sentences[-1] = new_sentences[-1] + sub_s + '，'
+                else:
+                    new_sentences.append(sub_s + '，')
+
+            if len(sub_sentences[-1]) < min_len:
+                new_sentences[-1] = new_sentences[-1] + sub_sentences[-1]
             else:
-                new_sentences.append(s)
-        return new_sentences
+                new_sentences.append(sub_sentences[-1])
+
+            continue
+
+        if len(s) < min_len:
+            new_sentences[-1] = new_sentences[-1] + s
+        else:
+            new_sentences.append(s)
+
+    return new_sentences

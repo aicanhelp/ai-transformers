@@ -13,7 +13,7 @@ from ..model import ModelMode, task_model
 from ..model.model_args import ModelArguments
 from ..task.task_args import TaskArguments, parse_tasks_args
 from ..train.trainer import Trainer
-from ..train.trainer_utils import PredictionOutput, EvalPrediction
+from ..train.trainer_utils import PredictionOutput, EvalPrediction, InputExample
 from ..train.training_args import TrainingArguments
 from ..data import DataArguments, TaskDataset, DataProcessor
 from ..transformersx_base import aiutils, log, join_path
@@ -275,8 +275,11 @@ class TransformerTask:
         results = self._taskTrainer.eval()
         return results
 
-    def single_predict(self, *input):
-        return self._taskModel.model(*input)
+    def single_predict(self, example: InputExample):
+        data_processor = DataProcessor()
+        data_processor.get_dev_examples = lambda: [example]
+        data_processor.get_labels = lambda: []
+        return self.predict(data_processor)
 
     def predict(self, data_processor=None) -> PredictionOutput:
         dataset = TaskDataset(self.task_args.data_args,
