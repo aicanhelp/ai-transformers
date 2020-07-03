@@ -1,7 +1,12 @@
+import json
+
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
+from transformers import PreTrainedModel
 
 from .trainer_base import *
-from .trainer_counter import TaskTrainedCounter
+import os
+from .trainer_scheduler import TaskTrainedScheduler
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -38,27 +43,36 @@ def is_wandb_available():
     return _has_wandb
 
 
-class TaskTrainerLogger(TrainerBase):
-    def __init__(self, args: TaskTrainingArguments,
+@configclass
+class TrainerLoggerConfig():
+    logging_dir: str = field(None, "Tensorboard log dir.")
+    logging_first_step: bool = field(False, "Log and eval the first global_step")
+    logging_steps: int = field(500, "Log every X updates steps.")
+    tpu_metrics_debug: bool = field(False, "TPU: Whether to print debug metrics")
+
+
+class TaskTrainerLogger():
+    def __init__(self, trainer_env: TrainerEnv,
                  model: PreTrainedModel,
                  tb_writer: Optional["SummaryWriter"] = None):
-        super().__init__(args)
+        self._env = trainer_env
+        self.config: TrainerLoggerConfig = trainer_env.get_config(TrainerLoggerConfig)
         self._model = model
         self._tb_writer = tb_writer
 
     def __init_logger(self, tb_writer):
         if self._tb_writer is not None:
-            self.tb_writer = tb_writer
-        elif is_tensorboard_available() and self._args.local_rank in [-1, 0]:
-            self.tb_writer = SummaryWriter(log_dir=self._args.logging_dir)
+            self._tb_writer = tb_writer
+        elif is_tensorboard_available() and self._env.config.local_rank in [-1, 0]:
+            self._tb_writer = SummaryWriter(log_dir=self._env.args.logging_dir)
         if not is_tensorboard_available():
-            logger.warning(
+            log.warning(
                 "You are instantiating a Trainer but Tensorboard is not installed. You should consider installing it."
             )
         if is_wandb_available():
             self._setup_wandb()
         else:
-            logger.info(
+            log.info(
                 "You are instantiating a Trainer but W&B is not installed. To use wandb logging, "
                 "run `pip install wandb; wandb login` see https://docs.wandb.com/huggingface."
             )
@@ -79,31 +93,31 @@ class TaskTrainerLogger(TrainerBase):
             WANDB_DISABLED:
                 (Optional): boolean - defaults to false, set to "true" to disable wandb entirely
         """
-        logger.info('Automatic Weights & Biases logging enabled, to disable set os.environ["WANDB_DISABLED"] = "true"')
-        wandb.init(project=os.getenv("WANDB_PROJECT", "huggingface"), config=vars(self._args))
+        log.info('Automatic Weights & Biases logging enabled, to disable set os.environ["WANDB_DISABLED"] = "true"')
+        wandb.init(project=os.getenv("WANDB_PROJECT", "huggingface"), config=vars(self._env.args))
         # keep track of model topology and gradients
         if os.getenv("WANDB_WATCH") != "false":
             wandb.watch(
-                self._model, log=os.getenv("WANDB_WATCH", "gradients"), log_freq=max(100, self._args.logging_steps)
+                self._model, log=os.getenv("WANDB_WATCH", "gradients"), log_freq=max(100, self.config.logging_steps)
             )
 
-    def log_pre_train(self, train_dataloader, train_counter: TaskTrainedCounter):
+    def log_pre_train(self, train_dataloader, train_scheduler: TaskTrainedScheduler):
         if self._tb_writer is not None:
-            self._tb_writer.add_text("args", self._args.to_json_string())
-            self._tb_writer.add_hparams(self._args.to_sanitized_dict(), metric_dict={})
+            self._tb_writer.add_text("args", self._env.args.to_json_string())
+            self._tb_writer.add_hparams(self._env.args.to_sanitized_dict(), metric_dict={})
 
-        logger.info("***** Running training *****")
-        logger.info("  Num examples = %d", self.num_examples(train_dataloader))
-        logger.info("  Num Epochs = %d", train_counter.num_train_epochs)
-        logger.info("  Instantaneous batch size per device = %d", self._args.per_gpu_train_batch_size)
-        logger.info("  Total train batch size (w. parallel, distributed & accumulation) = %d",
-                    train_counter.total_train_batch_size)
-        logger.info("  Gradient Accumulation steps = %d", self._args.gradient_accumulation_steps)
-        logger.info("  Total optimization steps = %d", train_counter.t_total)
+        log.info("***** Running training *****")
+        log.info("  Num examples = %d", self._env.num_examples(train_dataloader))
+        log.info("  Num Epochs = %d", train_scheduler.num_train_epochs)
+        log.info("  Instantaneous batch size per device = %d", self._env.args.per_gpu_train_batch_size)
+        log.info("  Total train batch size (w. parallel, distributed & accumulation) = %d",
+                 train_scheduler.total_train_batch_size)
+        log.info("  Gradient Accumulation steps = %d", self._env.args.gradient_accumulation_steps)
+        log.info("  Total optimization steps = %d", train_scheduler.t_total)
 
     def is_need_log_step(self, global_step):
-        return (self._args.logging_steps > 0 and global_step % self._args.logging_steps == 0) or (
-                global_step == 1 and self._args.logging_first_step)
+        return (self._env.args.logging_steps > 0 and global_step % self.config.logging_steps == 0) or (
+                global_step == 1 and self.config.logging_first_step)
 
     def log_train_step(self, epoch,
                        global_step,
@@ -123,12 +137,12 @@ class TaskTrainerLogger(TrainerBase):
             print(output)
 
     def log_train_epoch(self):
-        if self._args.tpu_metrics_debug:
+        if self.config.tpu_metrics_debug:
             # tpu-comment: Logging debug metrics for PyTorch/XLA (compile, execute times, ops, etc.)
-            self.xm.master_print(self.met.metrics_report())
+            self._env.tpu_metrics()
 
     def log_train_end(self):
-        if self.tb_writer:
-            self.tb_writer.close()
+        if self._tb_writer:
+            self._tb_writer.close()
 
-        logger.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")
+        log.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")

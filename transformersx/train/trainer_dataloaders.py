@@ -1,17 +1,25 @@
+from transformersx import TaskDatasetFactory
+
 from .trainer_base import *
 
-from transformersx.train.training_args import TaskTrainingArguments
+
+@configclass
+class TrainerDataloadersConfig():
+    per_gpu_train_batch_size: int = field(16, "Batch size per GPU/CPU for training.")
+    per_gpu_eval_batch_size: int = field(16, "Batch size per GPU/CPU for evaluation.")
 
 
-class TaskTrainerDataLoaders(TrainerBase):
-    def __init__(self, args: TaskTrainingArguments,
-                 data_collator: DataCollator,
-                 train_dataset: Dataset = None,
-                 eval_dataset: Dataset = None):
-        super().__init__(args)
+class TaskTrainerDataLoaders():
+    def __init__(self, trainer_env: TrainerEnv,
+                 dataset_factory: TaskDatasetFactory,
+                 data_collator: DataCollator):
+        self._env = trainer_env
+        self.config: TrainerDataloadersConfig = trainer_env.get_config(TrainerDataloadersConfig)
         self._data_collator = data_collator
-        self._train_dataset = train_dataset
-        self._eval_dataset = eval_dataset
+        self._dataset_factory = dataset_factory
+        self._local_rank = trainer_env.config.local_rank
+        self.train_batch_size = trainer_env.batch_size(self.config.per_gpu_train_batch_size)
+        self.eval_batch_size = trainer_env.batch_size(self.config.per_gpu_eval_batch_size)
 
     def _create_dataloader(self, dataset, sampler, batch_size):
         data_loader = DataLoader(
@@ -21,38 +29,40 @@ class TaskTrainerDataLoaders(TrainerBase):
             shuffle=False if sampler is not None else True,
             collate_fn=self._data_collator.collate_batch,
         )
-        if self.is_tpu_available():
-            data_loader = self.pl.ParallelLoader(data_loader, [self._args.device]).per_device_loader(self._args.device)
+        if self._env.is_tpu_available():
+            data_loader = self._env.get_tpu_dataloader(data_loader)
         return data_loader
 
     def get_train_dataloader(self) -> DataLoader:
-        if self._train_dataset is None:
+        train_dataset = self._dataset_factory.create_train_dataset(local_rank=self._local_rank) \
+            if self._dataset_factory else None
+        if train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
-        if self.is_tpu_available():
-            train_sampler = self.get_tpu_sampler(self._train_dataset)
+        if self._env.is_tpu_available():
+            train_sampler = self._env.get_tpu_sampler(train_dataset)
         else:
             train_sampler = (
-                RandomSampler(self._train_dataset)
-                if self._args.local_rank == -1
-                else DistributedSampler(self._train_dataset)
+                RandomSampler(train_dataset)
+                if self._local_rank == -1
+                else DistributedSampler(train_dataset)
             )
 
-        return self._create_dataloader(self._train_dataset, train_sampler, self.train_batch_size)
+        return self._create_dataloader(train_dataset, train_sampler, self.train_batch_size)
 
     def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None) -> DataLoader:
-        if eval_dataset is None and self._eval_dataset is None:
+        eval_dataset = self._dataset_factory.create_eval_dataset(
+            local_rank=self._env.args.local_rank) if not eval_dataset and self._dataset_factory else eval_dataset
+        if eval_dataset is None:
             raise ValueError("Trainer: evaluation requires an eval_dataset.")
 
-        eval_dataset = eval_dataset if eval_dataset is not None else self._eval_dataset
-
-        sampler = self.get_tpu_sampler(eval_dataset) if self.is_tpu_available() else None
+        sampler = self._env.get_tpu_sampler(eval_dataset) if self._env.is_tpu_available() else None
 
         return self._create_dataloader(eval_dataset, sampler, self.eval_batch_size)
 
     def get_test_dataloader(self, test_dataset: Dataset) -> DataLoader:
         # We use the same batch_size as for eval.
         sampler = None
-        if self.is_tpu_available():
-            sampler = self.get_tpu_sampler(test_dataset) if self.is_tpu_available() else None
+        if self._env.is_tpu_available():
+            sampler = self._env.get_tpu_sampler(test_dataset) if self._env.is_tpu_available() else None
 
         return self._create_dataloader(test_dataset, sampler, self.eval_batch_size)

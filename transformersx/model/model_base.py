@@ -2,9 +2,11 @@ import fnmatch
 
 from dataclasses import dataclass, fields
 import os
+
+from transformers import PreTrainedTokenizer
 from transformers.file_utils import WEIGHTS_NAME, CONFIG_NAME, url_to_filename, hf_bucket_url
-from transformers.tokenization_utils import ADDED_TOKENS_FILE, SPECIAL_TOKENS_MAP_FILE, TOKENIZER_CONFIG_FILE, \
-    PreTrainedTokenizer
+from transformers.tokenization_utils_base import ADDED_TOKENS_FILE, SPECIAL_TOKENS_MAP_FILE, TOKENIZER_CONFIG_FILE
+
 from ..transformersx_base import log,join_path
 
 try:

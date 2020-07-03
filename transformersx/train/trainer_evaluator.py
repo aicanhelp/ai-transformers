@@ -1,11 +1,22 @@
+import json
+from collections import Callable
+
+from tqdm import tqdm
+from transformers import PreTrainedModel
+
 from .trainer_base import *
 from .trainer_dataloaders import TaskTrainerDataLoaders
 
 
-class TaskTrainerPredictor(TrainerBase):
-    def __init__(self, args: TaskTrainingArguments, model: PreTrainedModel,
+@configclass
+class TrainerEvaluatorConfig():
+    pass
+
+
+class TaskTrainerPredictor():
+    def __init__(self, trainer_env: TrainerEnv, model: PreTrainedModel,
                  data_loaders: TaskTrainerDataLoaders):
-        super().__init__(args)
+        self._env = trainer_env
         self._model = model
         self._data_loaders = data_loaders
 
@@ -15,29 +26,29 @@ class TaskTrainerPredictor(TrainerBase):
 
     def _prepare_model(self):
         # multi-gpu eval
-        if self._args.n_gpu > 1 and not isinstance(self._model, torch.nn.DataParallel):
+        if self._env.n_gpu > 1 and not isinstance(self._model, torch.nn.DataParallel):
             model = torch.nn.DataParallel(self._model)
         else:
             model = self._model
-        model.to(self._args.device)
+        model.to(self._env.device)
         return model
 
     def _get_batch_size(self, dataloader: DataLoader):
-        if self.is_tpu_available():
+        if self._env.is_tpu_available():
             return dataloader._loader._loader.batch_size
         else:
             return dataloader.batch_size
 
     def prediction_loop(
-            self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None, max_steps=-1
+            self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None
     ) -> TaskPredictionOutput:
         prediction_loss_only = prediction_loss_only if prediction_loss_only is not None else prediction_loss_only
         model = self._prepare_model()
         batch_size = self._get_batch_size(dataloader)
 
-        logger.info("***** Running %s *****", description)
-        logger.info("  Num examples = %d", self.num_examples(dataloader))
-        logger.info("  Batch size = %d", batch_size)
+        log.info("***** Running %s *****", description)
+        log.info("  Num examples = %d", self._env.num_examples(dataloader))
+        log.info("  Batch size = %d", batch_size)
 
         eval_losses: List[float] = []
         preds: np.ndarray = None
@@ -46,17 +57,13 @@ class TaskTrainerPredictor(TrainerBase):
 
         model.eval()
 
-        limit_step = 0
         for inputs in tqdm(dataloader, desc=description):
-            if max_steps == 0 or (0 < max_steps < limit_step):
-                break
-            limit_step = limit_step + 1
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
             for k, v in inputs.items():
                 if k != 'guid':
-                    inputs[k] = v.to(self._args.device)
+                    inputs[k] = v.to(self._env.args.device)
                 else:
                     guids.extend(inputs.pop('guid'))
 
@@ -79,25 +86,23 @@ class TaskTrainerPredictor(TrainerBase):
                     else:
                         label_ids = np.append(label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
 
-        if self.is_tpu_available() and preds is not None and label_ids is not None:
+        if self._env.is_tpu_available() and preds is not None and label_ids is not None:
             # tpu-comment: Get all predictions and labels from all worker shards of eval dataset
-            preds = self.xm.mesh_reduce("eval_preds", preds, np.concatenate)
-            label_ids = self.xm.mesh_reduce("eval_out_label_ids", label_ids, np.concatenate)
+            preds, label_ids = self._env.get_tpu_eval(preds, label_ids)
 
         return TaskPredictionOutput(guids=guids, predictions=preds, label_ids=label_ids, eval_losses=eval_losses)
 
 
-class TaskTrainerEvaluator(TrainerBase):
-    def __init__(self, args: TaskTrainingArguments,
+class TaskTrainerEvaluator():
+    def __init__(self, trainer_env: TrainerEnv,
                  predictor: TaskTrainerPredictor,
                  compute_metrics: Optional[Callable[[TaskEvalPrediction], Dict]] = None):
-        super().__init__(args)
+        self._env = trainer_env
         self._predictor = predictor
         self._compute_metrics = compute_metrics
 
-    def evaluate(self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None,
-                 max_steps=-1):
-        p = self._predictor.prediction_loop(dataloader, description, prediction_loss_only, max_steps)
+    def evaluate(self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None):
+        p = self._predictor.prediction_loop(dataloader, description, prediction_loss_only)
 
         if self._compute_metrics is not None and p.predictions is not None and p.label_ids is not None:
             metrics = self._compute_metrics(TaskEvalPrediction(predictions=p.predictions, label_ids=p.label_ids))
@@ -115,13 +120,7 @@ class TaskTrainerEvaluator(TrainerBase):
         output = json.dumps({**metrics})
         print(output)
 
-        if self._args.tpu_metrics_debug:
-            self.xm.master_print(self.met.metrics_report())
+        if self._env.args.tpu_metrics_debug:
+            self._env.tpu_metrics()
 
         return p
-
-    @staticmethod
-    def build(args: TaskTrainingArguments, model: PreTrainedModel,
-              data_loaders: TaskTrainerDataLoaders,
-              compute_metrics: Optional[Callable[[TaskEvalPrediction], Dict]] = None):
-        return TaskTrainerEvaluator(args, TaskTrainerPredictor(args, model, data_loaders), compute_metrics)

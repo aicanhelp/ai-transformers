@@ -5,7 +5,7 @@ from .data_converter import TaskDataConverter
 from .data_processor import TaskDataProcessor
 
 from .data_store import TaskDataStore, TaskDataset
-from ..train.trainer import torch_distributed_zero_first
+from ..utils import torch_distributed_zero_first
 
 
 class TaskDatasetFactory:
@@ -27,15 +27,10 @@ class TaskDatasetFactory:
             return dataset
 
     def create_train_dataset(self, limit_length: Optional[int] = None, local_rank=-1) -> Dataset:
-        return self._create_dataset(True, limit_length, local_rank)
+        return self._create_dataset(False, limit_length, local_rank)
 
     def create_eval_dataset(self, limit_length: Optional[int] = None, local_rank=-1) -> Dataset:
         return self._create_dataset(True, limit_length, local_rank)
-
-    def create_predict_dataset(self, limit_length: Optional[int] = None, local_rank=-1) -> Dataset:
-        with torch_distributed_zero_first(local_rank):
-            features = self.__generate_features(limit_length, True)
-            return TaskDataset(features)
 
     def __generate_features(self, limit_length: Optional[int] = None, evaluate=False):
         examples = (

@@ -9,17 +9,23 @@ from tqdm.auto import tqdm, trange
 
 
 class TaskDataConverter:
-    def __init__(self, tokenizer: PreTrainedTokenizer, label_list, classification=True,
-                 max_length: Optional[int] = None, progress_bar=False):
+    def convert(self, examples):
+        raise NotImplementedError()
+
+
+class DefaultTaskDataConverter(TaskDataConverter):
+    def __init__(self, tokenizer: PreTrainedTokenizer,
+                 label_list,
+                 max_length: Optional[int] = None,
+                 progress_bar=False):
         self._tokenizer = tokenizer
-        self._classification = classification
         self._progress_bar = progress_bar
         self._max_length = max_length if max_length else tokenizer.max_len
         self._label_list = label_list
-        self._label_map = {label: i for i, label in enumerate(self._label_list)}
+        self._label_map = {label: i for i, label in enumerate(self._label_list)} if label_list else None
 
     def _label_from_example(self, example: TaskInputExample) -> Union[int, float]:
-        if self._classification:
+        if self._label_map:
             return self._label_map[example.label]
         else:
             return float(example.label)

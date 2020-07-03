@@ -1,5 +1,6 @@
-from tqdm.auto import tqdm
 import random
+
+from tqdm import tqdm
 
 from ..task_base import *
 
@@ -8,19 +9,22 @@ from ..task_base import *
 class NewsDataArguments:
     data_dir: str = field('/app/dataset/news', 'input the data dir for processing')
     save_mid: bool = field(True, 'whether cache the middle data for check')
-    context_min_len: int = field(128, 'context min length')
+    context_min_len: int = field(64, 'context min length')
     sentence_min_len: int = field(10, 'sentence min length')
+    check_min_anyway: int = field(True, 'whether check the sentence min length anyway')
     positive_mode: int = field(0, 'positive mode')
     negative_mode: int = field(0, 'negative mode')
     bar_size: int = field(1000, 'the progress bar size')
 
 
 class SentenceSplitter:
-    def __init__(self, sentence_min_len=10):
+    def __init__(self, sentence_min_len=10, check_min_anyway=False):
         self._min_len = sentence_min_len
+        self._check_min_anyway = check_min_anyway
 
     def split(self, segment: str):
         t = segment.replace('\n', '')
+
         sentences = cut_sentences(t)
         length = len(sentences)
         sents = []
@@ -28,7 +32,7 @@ class SentenceSplitter:
         l1 = len(sentences[i - 1])
         while i < length:
             l2 = len(sentences[i])
-            if l1 > self._min_len or l1 != l2:
+            if l1 > self._min_len or (l1 != l2 and not self._check_min_anyway):
                 sents.append(sentences[i - 1])
                 if i == length - 1:
                     sents.append(sentences[i])
@@ -48,14 +52,14 @@ class SentenceSplitter:
 
 
 class SentencesSegment():
-    def __init__(self, segment: str = None, sentence_min_len=10, exclude_empty_line=True):
+    def __init__(self, segment: str = None, sentence_min_len=10, exclude_empty_line=True, check_min_anyway=False):
         self._exclude_empty_line = exclude_empty_line
-        self._sentences = self._make_sentences(segment, sentence_min_len)
+        self._sentences = self._make_sentences(segment, sentence_min_len, check_min_anyway)
         self._size = len(self._sentences)
 
-    def _make_sentences(self, segment: str, sentence_min_len):
+    def _make_sentences(self, segment: str, sentence_min_len, check_min_anyway=False):
         if not segment: return []
-        return SentenceSplitter(sentence_min_len).split(segment)
+        return SentenceSplitter(sentence_min_len, check_min_anyway).split(segment)
 
     def add_new_sentence(self, sentence: str):
         sentence = sentence.strip()
@@ -63,6 +67,19 @@ class SentencesSegment():
             return
         self._sentences.append(sentence)
         self._size = self._size + 1
+        return self
+
+    def add_new_sentences_not_split(self, sentences):
+        if not sentences:
+            return
+
+        self.add_new_sentences(sentences.split('\n'))
+        return self
+
+    def add_new_sentences(self, sentences):
+        for line in sentences:
+            self.add_new_sentence(line)
+        return self
 
     def sentences(self, from_index, to_index):
         if to_index > self._size: to_index = self._size
@@ -89,16 +106,60 @@ class SentencesSegment():
     def size(self):
         return self._size
 
+    def char_index(self, sentence_index):
+        index = 0
+        for i in range(sentence_index):
+            index = index + len(self._sentences[i])
+        return index
+
+    def char_indexes(self, sentences_indexes):
+        if not sentences_indexes:
+            return []
+        sentences_indexes.sort()
+        from_index = 0
+        return_indexes = []
+        cur_index = 0
+        for i in range(len(sentences_indexes)):
+            for j in range(from_index, sentences_indexes[i] + 1):
+                cur_index = cur_index + len(self._sentences[j])
+            return_indexes.append(cur_index)
+            from_index = sentences_indexes[i] + 1
+
+        return return_indexes
+
+    def content(self, separate_indexes):
+        indexes = [*separate_indexes, len(self._sentences) - 1]
+        indexes.sort()
+        from_index = 0
+        return_content = [''] * len(indexes)
+        for i in range(len(indexes)):
+            for j in range(from_index, indexes[i] + 1):
+                return_content[i] = return_content[i] + self._sentences[j]
+            from_index = indexes[i] + 1
+        return return_content
+
     def all_sentences(self):
         return self._sentences
 
+    def all_content(self):
+        return ''.join(self._sentences)
+
 
 class NewsExampleSegment(SentencesSegment):
-    def __init__(self, segment: str, context_min_len=50, sentence_min_len=10):
-        super().__init__(segment, sentence_min_len)
+    def __init__(self, segment: str, context_min_len=64, sentence_min_len=10, exclude_empty_line=True,
+                 check_min_anyway=False):
+        super().__init__(segment, sentence_min_len, exclude_empty_line, check_min_anyway)
         self._context_min_len = context_min_len
         self.contexts = []
         self._make_contexts()
+
+    @staticmethod
+    def from_article(article: str, sentence_line=False):
+        if sentence_line:
+            segment = NewsExampleSegment('').add_new_sentences_not_split(article)
+            segment._make_contexts()
+            return segment
+        return NewsExampleSegment(article)
 
     def _make_contexts(self):
         total = self.size()
@@ -132,6 +193,26 @@ class NewsExampleSegment(SentencesSegment):
     def example(self, c_start, c_end):
         return self.context(c_start, c_end), self.sentence(c_end)
 
+    @staticmethod
+    def from_file(file_path, context_min_len=64, sentence_min_len=10,
+                  exclude_empty_line=True,
+                  check_min_anyway=False, line_sentence=True):
+        if line_sentence:
+            segment = NewsExampleSegment(None, context_min_len, sentence_min_len, exclude_empty_line, check_min_anyway)
+            FileLineReader(bar_step_size=-1, exclude_empty_line=True).pipe(
+                lambda input, result: segment.add_new_sentence(input)
+            ).read(file_path)
+            segment._make_contexts()
+            return segment
+
+        content = []
+        FileLineReader(bar_step_size=-1, exclude_empty_line=True).pipe(
+            lambda input, result: content.append(input)
+        ).read(file_path)
+        return NewsExampleSegment("".join(content), context_min_len, sentence_min_len,
+                                  exclude_empty_line,
+                                  check_min_anyway)
+
 
 class NewsExampleGenerator():
     def __init__(self, config: NewsDataArguments, type='train'):
@@ -143,8 +224,8 @@ class NewsExampleGenerator():
 
     def add_line(self, new_segment_str: str):
         new_segment = NewsExampleSegment(new_segment_str,
-                                         self._config.context_min_len,
-                                         self._config.sentence_min_len)
+                                         context_min_len=self._config.context_min_len,
+                                         sentence_min_len=self._config.sentence_min_len)
         if not new_segment.size():
             return self
 
@@ -166,39 +247,39 @@ class NewsExampleGenerator():
         e_index = random.choice(self._last_segment.contexts[:-1])
         guid = self._guid()
         text_a, text_b = self._last_segment.example(*e_index)
-        self.examples.append(InputExample(guid=guid,
-                                          text_a=text_a,
-                                          text_b=text_b,
-                                          label='0'))
+        self.examples.append(TaskInputExample(guid=guid,
+                                              text_a=text_a,
+                                              text_b=text_b,
+                                              label='0'))
         return True
 
     def _create_positive_examples_1(self):
         for e_index in self._last_segment.contexts[:-1]:
             guid = self._guid()
             text_a, text_b = self._last_segment.example(*e_index)
-            self.examples.append(InputExample(guid=guid,
-                                              text_a=text_a,
-                                              text_b=text_b,
-                                              label='0'))
+            self.examples.append(TaskInputExample(guid=guid,
+                                                  text_a=text_a,
+                                                  text_b=text_b,
+                                                  label='0'))
 
     def _create_negative_examples_0(self, new_segment: NewsExampleSegment):
         guid = self._guid()
         text_a = self._last_segment.last_context()
         text_b = new_segment.sentence(0)
-        self.examples.append(InputExample(guid=guid,
-                                          text_a=text_a,
-                                          text_b=text_b,
-                                          label='1'))
+        self.examples.append(TaskInputExample(guid=guid,
+                                              text_a=text_a,
+                                              text_b=text_b,
+                                              label='1'))
 
     def _create_negative_examples_1(self, new_segment: NewsExampleSegment):
         guid = self._guid()
         for context in self._last_segment.contexts:
             text_a = self._last_segment.context(*context)
             for text_b in new_segment.all_sentences():
-                self.examples.append(InputExample(guid=guid,
-                                                  text_a=text_a,
-                                                  text_b=text_b,
-                                                  label='1'))
+                self.examples.append(TaskInputExample(guid=guid,
+                                                      text_a=text_a,
+                                                      text_b=text_b,
+                                                      label='1'))
 
 
 class FileNewsExampleProcessor:
@@ -229,7 +310,7 @@ class FileNewsExampleProcessor:
         return self._example_generator.examples
 
 
-class NewsDataProcessor(DataProcessor):
+class NewsDataProcessor(TaskDataProcessor):
     def __init__(self, config: NewsDataArguments):
         self._config = config
         if self._config is None:
@@ -247,11 +328,8 @@ class NewsDataProcessor(DataProcessor):
     def get_labels(self):
         return ['0', '1']
 
-    def data_dir(self):
-        return self._config.data_dir
 
-
-class PredictDataProcessor(DataProcessor):
+class PredictDataProcessor(TaskDataProcessor):
     def __init__(self, segment: NewsExampleSegment):
         self._segment = segment
 
@@ -265,13 +343,10 @@ class PredictDataProcessor(DataProcessor):
         examples = []
         for i, e_index in enumerate(self._segment.contexts[:-1]):
             text_a, text_b = self._segment.example(*e_index)
-            examples.append(InputExample(guid=str(i),
-                                         text_a=text_a,
-                                         text_b=text_b))
+            examples.append(TaskInputExample(guid=str(i),
+                                             text_a=text_a,
+                                             text_b=text_b))
         return examples
 
     def get_labels(self):
         return ['0', '1']
-
-    def data_dir(self):
-        return None

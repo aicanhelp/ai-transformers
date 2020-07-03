@@ -1,9 +1,16 @@
-from ai_harness.configuration import ComplexArguments
-from .. import TransformerTask, log
+from transformersx import TransformerTask, ComplexArguments, log, configclass, field
 
 
-class ExampleManagement():
+@configclass()
+class WorkspaceConfig:
+    workspace_dir: str = field('/app/workspace', 'Transformers workspace directory')
+
+
+class TransformersWorkspace:
     TASKS = dict()
+
+    def __init__(self, config: WorkspaceConfig):
+        self.config = config
 
     def register_task(self, task_name, task_class):
         if self.TASKS.get(task_name) is not None:
@@ -31,7 +38,7 @@ class ExampleManagement():
             arguments[task_name] = arg_obj
         return arguments
 
-    def start_example_task(self, args=None, test=False):
+    def start_task(self, args=None, test=False):
         argument_objs = self._build_arguments()
 
         task_name, arguments = ComplexArguments(argument_objs).parse(args)

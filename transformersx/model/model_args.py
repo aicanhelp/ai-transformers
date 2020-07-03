@@ -1,5 +1,6 @@
 from ..transformersx_base import *
-from . import ALL_TASK_MODEL_PATHS, ModelTaskType, ModelMode
+from .models import ALL_TASK_MODEL_PATHS
+from .model_base import ModelTaskType, ModelMode
 
 
 @configclass
@@ -34,5 +35,6 @@ class TaskModelArguments:
     freeze_main: bool = field(False, 'whether freeze main parameter')
 
     num_labels: int = field(2, "the number of label")
+    max_len: int = field(512, "the max length of model input")
 
     unit_test: bool = field(False, "For unit test of the code, without the load of the model")

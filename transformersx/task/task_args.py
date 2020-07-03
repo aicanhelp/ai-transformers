@@ -7,6 +7,7 @@ from ..transformersx_base import *
 @configclass
 class TaskArguments:
     action: str = field("train", "the task action: train,eval,predict")
+    base_dir: str = field('/app/workspace', 'task base directory')
     model_args: TaskModelArguments = TaskModelArguments()
     data_args: TaskDataArguments = TaskDataArguments()
     training_args: TaskTrainingArguments = TaskTrainingArguments()

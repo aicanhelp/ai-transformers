@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from transformers import DataCollator
 from transformers.data.data_collator import InputDataClass
 
+from ai_transformersx import ModelMode
+
 
 class TaskEvalPrediction(NamedTuple):
     predictions: np.ndarray
@@ -22,6 +24,14 @@ class TaskPredictionOutput(NamedTuple):
 class TaskTrainOutput(NamedTuple):
     global_step: int
     training_loss: float
+
+
+def default_compute_metrics(self, p: TaskEvalPrediction) -> Dict:
+    if self._model_args.model_mode == ModelMode.classification:
+        preds = np.argmax(p.predictions, axis=1)
+    elif self._model_args.model_mode == ModelMode.regression:
+        preds = np.squeeze(p.predictions)
+    return self._acc_and_f1(preds, p.label_ids)
 
 
 @dataclass
@@ -56,6 +66,3 @@ class TaskDefaultDataCollatorx(DataCollator):
             if k not in ("guid", "label", "label_ids") and v is not None and not isinstance(v, str):
                 batch[k] = torch.tensor([getattr(f, k) for f in features], dtype=torch.long)
         return batch
-
-
-PREFIX_CHECKPOINT_DIR = "checkpoint"
