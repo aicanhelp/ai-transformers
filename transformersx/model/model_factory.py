@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from transformers import PretrainedConfig, PreTrainedTokenizer, PreTrainedModel
 
-from ..transformersx_base import aiutils, log, join_path, configclass, field
-from .models import task_model, ALL_TASK_MODEL_PATHS
-from .model_base import ModelTaskType, ModelMode
+from ..transformersx_base import log, join_path
+from .models import task_model
+from .model_config import TaskModelConfig
 
 
 @dataclass
@@ -13,36 +13,73 @@ class TaskModel:
     model: PreTrainedModel
 
 
-@configclass()
-class ModelConfig:
-    model_name: str = field("bert-base-chinese", "the name of model: " + str(ALL_TASK_MODEL_PATHS))
-    model_task_type: str = field("seq_cls",
-                                 "the task type of model:{}, model_task_type decides the Task".format(
-                                     str(ModelTaskType.names())))
-    model_mode: str = field("classification", "the model of model: " + str(ModelMode.names()))
-    framework: str = field("pt", "the name of framework: pt--Pytorch,tf--Tensorflow")
-    language: str = field("cn", "the language of model: cn, en")
-
-
 class TaskModelFactory:
-    def __init__(self, task_name, model_args: TaskModelArguments, model_class=None):
+    def __init__(self, task_name, config: TaskModelConfig, model_class=None):
         self._task_name = task_name
-        self._model_args = model_args
-        self._pretrained_store = PretrainedModelStore(model_args)
-        self._finetuning_store = FineTuningModelStore(model_args)
+        self.config = config
         self._model_class = model_class
         self._model_cache = {}
 
-    def pretrained_model(self, model_path=None) -> TaskModel:
-        task_model = self._model_cache.get('pretrained')
-        if not task_model:
-            task_model = self._pretrained_store.load_model(self._model_class, model_path)
-            self._model_cache['pretrained'] = task_model
-        return task_model
+    def _create_task_model(self, model_class=None):
+        t_model = task_model(model_path=self.config.model_name,
+                             model_task_type=self.config.model_task_type,
+                             language=self.config.language,
+                             framework=self.config.framework)
 
-    def finetuning_model(self, fine_tuning_id=None) -> TaskModel:
-        task_model = self._model_cache.get('finetuning')
-        if not task_model:
-            task_model = self._finetuning_store.load_model(self._task_name, fine_tuning_id, self._model_class)
-            self._model_cache['finetuning'] = task_model
+        # use the custom class to replace the model Class
+        if model_class is not None:
+            t_model.model_class = model_class
+
+        log.info("Built task model: {}".format(str(t_model)))
+        return t_model
+
+    def _load_task_model(self, model_path, model_class=None) -> TaskModel:
+        t_model = self._create_task_model(model_class)
+        config, tokenizer, model = t_model.load(
+            num_labels=self.config.num_labels,
+            unit_test=self.config.unit_test,
+            cache_dir=model_path
+        )
+        log.info(
+            "Loaded task model, config: {}, tokenizer: {}, "
+            "model: {}".format(str(config),
+                               type(tokenizer),
+                               type(model))
+        )
+
+        return TaskModel(config=config, tokenizer=tokenizer, model=model)
+
+    def _freeze_parameters(self, model):
+        self._freeze_weights_main(model)
+
+        if hasattr(model, 'num_parameters'):
+            log.info("num params:" + str(model.num_parameters()))
+            log.info("num trainable params:" + str(model.num_parameters(only_trainable=True)))
+
+        if hasattr(model, 'named_parameters'):
+            log.info("Model Parameters Details: ")
+            for name, param in model.named_parameters():
+                log.info("{}:{}".format(name, param.size()))
+
+    def _freeze_weights_main(self, model):
+        if model is None or not self.config.freeze_main:
+            return
+
+        main_parameters = eval("self.model." + model.main_parameter)
+        if hasattr(main_parameters, "parameters"):
+            for param in main_parameters.parameters():
+                param.requires_grad = False
+
+    def get_task_model(self, model_path=None, for_train=True) -> TaskModel:
+        cached_name = 'pretrained' if not model_path else model_path
+        task_model = self._model_cache.get(cached_name)
+
+        if task_model: return task_model
+        if not model_path:
+            model_path = join_path(self.config.model_pretrained_dir, self.config.model_name)
+
+        task_model = self._load_task_model(model_path, self._model_class)
+
+        if for_train:
+            self._freeze_parameters(task_model.model)
         return task_model

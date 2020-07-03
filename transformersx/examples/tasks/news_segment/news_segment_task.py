@@ -4,15 +4,15 @@ from transformers.data.metrics import acc_and_f1
 
 from transformers import EvalPrediction
 
-from .news_data_processor import NewsDataProcessor, NewsDataArguments
+from .news_data_processor import NewsDataProcessor, NewsDataConfig
 import numpy as np
 
-from ..task_base import log, TaskArguments, configclass, TransformerTask, TaskContext
+from ..task_base import log, TaskConfig, configclass, DefaultTransformerTask, TaskContext
 
 
 @configclass
-class NewsSegmentTaskArguments(TaskArguments):
-    processor_args: NewsDataArguments = NewsDataArguments()
+class NewsSegmentTaskArguments(TaskConfig):
+    processor_config: NewsDataConfig = NewsDataConfig()
 
 
 def news_compute_metrics(p: EvalPrediction) -> Dict:
@@ -30,15 +30,15 @@ def news_compute_metrics(p: EvalPrediction) -> Dict:
     return result
 
 
-class NewsSegmentTask(TransformerTask):
+class NewsSegmentTask(DefaultTransformerTask):
     args_class = NewsSegmentTaskArguments
 
-    def __init__(self, task_args: NewsSegmentTaskArguments):
-        super().__init__(task_args)
+    def __init__(self, config: NewsSegmentTaskArguments):
+        super().__init__(config)
 
-    def __create_task_context(self, task_args: NewsSegmentTaskArguments) -> TaskContext:
+    def __create_task_context(self, config: NewsSegmentTaskArguments) -> TaskContext:
         return TaskContext(
             task_name='sentiment',
-            data_processor=NewsDataProcessor(task_args.processor_args),
+            data_processor=NewsDataProcessor(config.processor_config),
             compute_metrics=news_compute_metrics
         )

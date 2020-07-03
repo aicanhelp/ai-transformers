@@ -6,7 +6,7 @@ from ..task_base import *
 
 
 @configclass
-class NewsDataArguments:
+class NewsDataConfig:
     data_dir: str = field('/app/dataset/news', 'input the data dir for processing')
     save_mid: bool = field(True, 'whether cache the middle data for check')
     context_min_len: int = field(64, 'context min length')
@@ -215,7 +215,7 @@ class NewsExampleSegment(SentencesSegment):
 
 
 class NewsExampleGenerator():
-    def __init__(self, config: NewsDataArguments, type='train'):
+    def __init__(self, config: NewsDataConfig, type='train'):
         self._type = type
         self._config = config
         self.examples = []
@@ -283,7 +283,7 @@ class NewsExampleGenerator():
 
 
 class FileNewsExampleProcessor:
-    def __init__(self, file, config: NewsDataArguments, type='train'):
+    def __init__(self, file, config: NewsDataConfig, type='train'):
         self._file = file
         self._config = config
         self._type = type
@@ -311,10 +311,10 @@ class FileNewsExampleProcessor:
 
 
 class NewsDataProcessor(TaskDataProcessor):
-    def __init__(self, config: NewsDataArguments):
+    def __init__(self, config: NewsDataConfig):
         self._config = config
         if self._config is None:
-            self._config = parse_tasks_args(NewsDataArguments)
+            self._config = parse_tasks_args(NewsDataConfig)
 
     def _get_example(self, file_name, type):
         return FileNewsExampleProcessor(join_path(self._config.data_dir, file_name), self._config, type).get_examples()

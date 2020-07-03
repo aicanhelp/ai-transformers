@@ -7,7 +7,7 @@ from ai_transformersx import InputFeatures
 from torch.utils.data import Dataset
 import os
 
-from .data_args import TaskDataArguments
+from .data_config import TaskDataConfig
 from ..transformersx_base import log, join_path
 
 
@@ -34,9 +34,9 @@ class TaskDataStore():
 
 
 class LocalDataStore(TaskDataStore):
-    def __init__(self, dataStoreId, dataArgs: TaskDataArguments):
+    def __init__(self, dataStoreId, config: TaskDataConfig):
         self.dataStoreId = dataStoreId
-        self.dataArgs = dataArgs
+        self.config = config
 
     def load_dataset(self, limit_length: Optional[int] = None, evaluate=False) -> TaskDataset:
         saved_file = self._create_save_file(evaluate)
@@ -52,13 +52,13 @@ class LocalDataStore(TaskDataStore):
 
     def _create_save_file(self, evaluate):
         saved_file = "{}_{}".format(self.dataStoreId, ("eval" if evaluate else "train"))
-        return join_path(self.dataArgs.data_dir, saved_file)
+        return join_path(self.config.data_dir, saved_file)
 
     def save_dataset(self, dataset: TaskDataset, evaluate=False):
         if not dataset:
             return
         saved_file = self._create_save_file(evaluate)
-        if not os.path.exists(saved_file) or self.dataArgs.overwrite:
+        if not os.path.exists(saved_file) or self.config.overwrite:
             log.info("Saving dataset into  file {}".format(saved_file))
             start = time.time()
             torch.save(dataset.features, saved_file)

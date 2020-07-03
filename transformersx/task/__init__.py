@@ -1,2 +1,2 @@
-from .tasks import TransformerTask, TaskContext
-from .task_args import TaskArguments, parse_tasks_args
+from .tasks import DefaultTransformerTask, TaskContext, TransformerTask
+from .task_config import TaskConfig, parse_tasks_args

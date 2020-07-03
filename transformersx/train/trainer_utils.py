@@ -4,8 +4,7 @@ import torch
 from dataclasses import dataclass
 from transformers import DataCollator
 from transformers.data.data_collator import InputDataClass
-
-from ai_transformersx import ModelMode
+from transformers.data.metrics import acc_and_f1
 
 
 class TaskEvalPrediction(NamedTuple):
@@ -26,12 +25,12 @@ class TaskTrainOutput(NamedTuple):
     training_loss: float
 
 
-def default_compute_metrics(self, p: TaskEvalPrediction) -> Dict:
-    if self._model_args.model_mode == ModelMode.classification:
+def default_compute_metrics(p: TaskEvalPrediction, for_cls) -> Dict:
+    if for_cls:
         preds = np.argmax(p.predictions, axis=1)
-    elif self._model_args.model_mode == ModelMode.regression:
+    else:
         preds = np.squeeze(p.predictions)
-    return self._acc_and_f1(preds, p.label_ids)
+    return acc_and_f1(preds, p.label_ids)
 
 
 @dataclass

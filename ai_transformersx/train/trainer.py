@@ -18,7 +18,7 @@ from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler, SequentialSampler, Sampler
 from tqdm.auto import tqdm, trange
 
-from transformers.data.data_collator import DataCollator, DefaultDataCollator
+from transformers.data.data_collator import DataCollator
 from transformers.modeling_utils import PreTrainedModel
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 from .trainer_utils import PREFIX_CHECKPOINT_DIR, EvalPrediction, PredictionOutput, TrainOutput, DefaultDataCollatorx

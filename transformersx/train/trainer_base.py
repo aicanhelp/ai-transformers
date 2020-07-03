@@ -46,12 +46,12 @@ class TrainerEvnConfig():
 
 
 class TrainerEnv:
-    def __init__(self, args):
-        self.args = args
+    def __init__(self, total_config):
+        self.total_config = total_config
         self.config: TrainerEvnConfig = self.get_config(TrainerEvnConfig)
 
     def get_config(self, config_class):
-        return export(self.args, config_class)
+        return export(self.total_config, config_class)
 
     def is_tpu_available(self):
         return _has_tpu
@@ -146,7 +146,7 @@ class TrainerEnv:
             # Here, we'll use torch.distributed.
             # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
             torch.distributed.init_process_group(backend="nccl")
-            device = torch.device("cuda", self.args.local_rank)
+            device = torch.device("cuda", self.config.local_rank)
             n_gpu = 1
         return device, n_gpu
 

@@ -7,7 +7,7 @@ from transformers import PreTrainedTokenizer
 from transformers.file_utils import WEIGHTS_NAME, CONFIG_NAME, url_to_filename, hf_bucket_url
 from transformers.tokenization_utils_base import ADDED_TOKENS_FILE, SPECIAL_TOKENS_MAP_FILE, TOKENIZER_CONFIG_FILE
 
-from ..transformersx_base import log,join_path
+from ..transformersx_base import log, join_path
 
 try:
     import turbo_transformers
@@ -100,12 +100,7 @@ class TaskModel:
     tokenizer: type = None
     main_parameter: str = None
 
-    def load(self, **kwargs):
-        cache_dir = kwargs['cache_dir']
-        _check_and_rename_pretrained_model(cache_dir, self.model_path, self.tokenizer)
-        model_path = join_path(cache_dir, self.model_path)
-
-        self.model_path = model_path
+    def __load(self, model_path, **kwargs):
         config = self.config.from_pretrained(
             model_path,
             num_labels=kwargs['num_labels']
@@ -120,6 +115,14 @@ class TaskModel:
         else:
             model = None
         return config, tokenizer, model
+
+    def load(self, **kwargs):
+        cache_dir = kwargs['cache_dir']
+        _check_and_rename_pretrained_model(cache_dir, self.model_path, self.tokenizer)
+        model_path = join_path(cache_dir, self.model_path)
+
+        self.model_path = model_path
+        return self.__load(model_path, **kwargs)
 
     def renew(self, model_class):
         return TaskModel(self.model_type, self.config, self.model_path,
