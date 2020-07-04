@@ -1,6 +1,6 @@
 # Transformersx
 
-##介绍
+##介绍  
 [🤗 Transformers](https://github.com/huggingface/transformers) 是一个非常好用的专门针对基于Pytorch的Transformer相关NLP深度学习模型的工具库。
 它管理和归类了当前几乎所有的最好的基于的Transformer的自然语言模型以及公开的预训练模型，并都转换成了Pytorch。
 （1）使用它你可以很方便的做Bert/Albert/GPT2/XLNET等当前最好的自然语言预训练模型训练以及下游任务的模型开发和训练。
@@ -15,7 +15,7 @@
 这个设计应该是有问题的。从职责上说，模型的实现和模型的存储下载应该分离。
 （3）Transformers增加了一个Trainer以方便研究人员训练Transformer模型使用。同样，这个Trainer的设计和实现水平跟模型的设计和实现也一样有不少的差距。
 
-## 目的
+## 目的  
 本项目的目的是想针对Transformers的一些问题，对Transformers做进一步的扩展，让研究人员使用Transformers更方便。当然也没有解决上面提到的所有问题。
 ### （1）首先，针对下载这个问题。  
 本项目的解决方法是，在docker目录中提供了几种用于Transformers相关模型的训练和运行环境的Docker定义，
