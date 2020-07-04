@@ -80,8 +80,7 @@ class TrainerEnv:
         xm.master_print(met.metrics_report())
 
     def apex_model_optimizer(self, model, optimizer):
-        if not self.is_apex_available():
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+        assert self.is_apex_available(), "Please install apex from https://www.github.com/nvidia/apex to use fp16 training."
         return amp.initialize(model, optimizer, opt_level=self.config.fp16_opt_level)
 
     def get_tpu_eval(self, preds, label_ids):

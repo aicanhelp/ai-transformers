@@ -1,4 +1,4 @@
-from .. import TrainerEnv
+from ..train import TrainerEnv
 from ..model import TaskModelFactory
 from ..train import TaskContext, TaskTrainerBuildContext, TaskTrainer
 from ..data import TaskDatasetFactory, LocalDataStore, TaskDataConverter, DefaultTaskDataConverter

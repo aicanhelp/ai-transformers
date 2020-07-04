@@ -3,22 +3,22 @@ from typing import Optional, List
 
 import torch
 
-from ai_transformersx import InputFeatures
 from torch.utils.data import Dataset
 import os
 
+from .data_models import TaskInputFeatures
 from .data_config import TaskDataConfig
 from ..transformersx_base import log, join_path
 
 
 class TaskDataset(Dataset):
-    def __init__(self, features: List[InputFeatures]):
+    def __init__(self, features: List[TaskInputFeatures]):
         self.features = features
 
     def __len__(self):
         return len(self.features)
 
-    def __getitem__(self, i) -> InputFeatures:
+    def __getitem__(self, i) -> TaskInputFeatures:
         return self.features[i]
 
 

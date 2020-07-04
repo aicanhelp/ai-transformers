@@ -14,13 +14,12 @@ class TaskDataConverter:
 
 
 class DefaultTaskDataConverter(TaskDataConverter):
-    def __init__(self, tokenizer: PreTrainedTokenizer,
-                 label_list,
-                 max_length: Optional[int] = None,
+    def __init__(self, tokenizer: PreTrainedTokenizer, label_list, max_length: Optional[int] = None,
                  progress_bar=False):
         self._tokenizer = tokenizer
         self._progress_bar = progress_bar
         self._max_length = max_length if max_length else tokenizer.max_len
+        if self._max_length > 1024: self._max_length = 512
         self._label_list = label_list
         self._label_map = {label: i for i, label in enumerate(self._label_list)} if label_list else None
 

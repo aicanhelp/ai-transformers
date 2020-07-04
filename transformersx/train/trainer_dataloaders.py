@@ -36,8 +36,7 @@ class TaskTrainerDataLoaders():
     def get_train_dataloader(self) -> DataLoader:
         train_dataset = self._dataset_factory.create_train_dataset(local_rank=self._local_rank) \
             if self._dataset_factory else None
-        if train_dataset is None:
-            raise ValueError("Trainer: training requires a train_dataset.")
+        assert train_dataset, '"Trainer: training requires a train_dataset."'
         if self._env.is_tpu_available():
             train_sampler = self._env.get_tpu_sampler(train_dataset)
         else:
@@ -51,9 +50,8 @@ class TaskTrainerDataLoaders():
 
     def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None) -> DataLoader:
         eval_dataset = self._dataset_factory.create_eval_dataset(
-            local_rank=self._env.args.local_rank) if not eval_dataset and self._dataset_factory else eval_dataset
-        if eval_dataset is None:
-            raise ValueError("Trainer: evaluation requires an eval_dataset.")
+            local_rank=self._local_rank) if not eval_dataset and self._dataset_factory else eval_dataset
+        assert eval_dataset, "Trainer: evaluation requires an eval_dataset."
 
         sampler = self._env.get_tpu_sampler(eval_dataset) if self._env.is_tpu_available() else None
 

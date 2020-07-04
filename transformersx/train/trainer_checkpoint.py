@@ -65,12 +65,11 @@ class TaskTrainerCheckpoint():
         log.info("Saving model checkpoint to %s", output_dir)
 
         if self._env.is_master_ordinal():
-            torch.save(self._env.args, os.path.join(output_dir, "training_args.bin"))
+            torch.save(self._env.total_config, os.path.join(output_dir, "training_args.bin"))
 
         # Save a trained model and configuration using `save_pretrained()`.
         # They can then be reloaded using `from_pretrained()`
-        if not isinstance(model, PreTrainedModel):
-            raise ValueError("Trainer.model appears to not be a PreTrainedModel")
+        assert isinstance(model, PreTrainedModel), "Trainer.model appears to not be a PreTrainedModel"
 
         self._env.xm_rendezvous("saving_checkpoint")
         model.save_pretrained(output_dir)
@@ -79,12 +78,12 @@ class TaskTrainerCheckpoint():
         log.info("Saving model checkpoint to %s", output_dir)
         # Save a trained model and configuration using `save_pretrained()`.
         # They can then be reloaded using `from_pretrained()`
-        if not isinstance(model, PreTrainedModel):
-            raise ValueError("Trainer.model appears to not be a PreTrainedModel")
+        assert isinstance(model, PreTrainedModel), "Trainer.model appears to not be a PreTrainedModel"
+
         model.save_pretrained(output_dir)
 
         # Good practice: save your training arguments together with the trained model
-        torch.save(self._env.args, os.path.join(output_dir, "training_args.bin"))
+        torch.save(self._env.total_config, os.path.join(output_dir, "training_args.bin"))
 
 
 class TaskTrainerCheckpointer():
@@ -110,8 +109,8 @@ class TaskTrainerCheckpointer():
         return None
 
     def save_check_point(self, global_step):
-        if not self._model:
-            raise Exception('init_for_train must be called before saving checkpoint')
+        assert self._model, 'init_for_train must be called before saving checkpoint'
+
         if self.config.save_steps > 0 and global_step % self.config.save_steps == 0:
             TaskTrainerCheckpoint(self._env,
                                   self.__make_checkpoint_dir(global_step)

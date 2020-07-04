@@ -13,15 +13,11 @@ class TransformersWorkspace:
         self.config = config
 
     def register_task(self, task_name, task_class):
-        if self.TASKS.get(task_name) is not None:
-            raise ValueError(
-                "task name {} already exists, please use other name.".format(task_name)
-            )
+        assert not self.TASKS.get(task_name), "task name {} already exists, please use other name.".format(task_name)
+
         self.TASKS.setdefault(task_name, task_class)
-        if not issubclass(task_class, (TransformerTask)):
-            raise ValueError(
-                "task_class must be the subclass of TransformerTask"
-            )
+        assert issubclass(task_class, (TransformerTask)), "task_class must be the subclass of TransformerTask"
+
         return self
 
     def register_tasks(self, tasks):

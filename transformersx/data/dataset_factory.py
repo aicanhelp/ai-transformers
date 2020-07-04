@@ -10,8 +10,8 @@ from ..utils import torch_distributed_zero_first
 
 class TaskDatasetFactory:
     def __init__(self, data_store: TaskDataStore,
-                 processor: TaskDataProcessor,
-                 dataConverter: TaskDataConverter):
+                 processor: TaskDataProcessor = None,
+                 dataConverter: TaskDataConverter = None):
         self._data_store = data_store
         self._processor = processor
         self._converter = dataConverter
@@ -20,6 +20,7 @@ class TaskDatasetFactory:
         with torch_distributed_zero_first(local_rank):
             dataset = self._data_store.load_dataset(limit_length, evaluate)
             if not dataset:
+                assert self._processor and self._converter, 'processor and converter must be set for no cache data'
                 features = self.__generate_features(limit_length, evaluate)
                 dataset = TaskDataset(features)
                 if local_rank in [-1, 0]:
