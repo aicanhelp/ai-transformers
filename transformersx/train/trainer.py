@@ -1,4 +1,5 @@
 from tqdm import tqdm, trange
+from transformers import DataCollator
 
 from .trainer_base import *
 from .trainer_config import TrainerConfig
@@ -18,9 +19,9 @@ from ..transformersx_base import field, configclass
 class TaskContext:
     task_name: str = field('default')
     data_collator: DataCollator = field(TaskDefaultDataCollatorx())
-    compute_metrics = field(default_compute_metrics)
-    model_class = field(None)
-    data_processor = field(None)
+    compute_metrics = None
+    model_class = None
+    data_processor = None
 
 
 class TaskTrainerBuildContext:

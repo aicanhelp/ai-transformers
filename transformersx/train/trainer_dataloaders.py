@@ -1,5 +1,3 @@
-from ..data import TaskDatasetFactory
-
 from .trainer_base import *
 
 
@@ -28,7 +26,7 @@ class TaskTrainerDataLoaders():
             sampler=sampler,
             batch_size=batch_size,
             shuffle=False if sampler is not None else True,
-            collate_fn=self._data_collator.collate_batch,
+            collate_fn=self._data_collator,
         )
         if self._env.is_tpu_available():
             data_loader = self._env.get_tpu_dataloader(data_loader)

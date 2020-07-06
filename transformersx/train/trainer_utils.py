@@ -1,8 +1,7 @@
 from typing import Dict, NamedTuple, Optional, List, Union
 import numpy as np
 import torch
-from dataclasses import dataclass
-from transformers import DataCollator
+
 from transformers.data.data_collator import InputDataClass
 from transformers.data.metrics import acc_and_f1
 
@@ -25,17 +24,8 @@ class TaskTrainOutput(NamedTuple):
     training_loss: float
 
 
-def default_compute_metrics(p: TaskEvalPrediction, for_cls) -> Dict:
-    if for_cls:
-        preds = np.argmax(p.predictions, axis=1)
-    else:
-        preds = np.squeeze(p.predictions)
-    return acc_and_f1(preds, p.label_ids)
-
-
-@dataclass
-class TaskDefaultDataCollatorx(DataCollator):
-    def collate_batch(self, features: List[InputDataClass]) -> Dict[str, torch.Tensor]:
+class TaskDefaultDataCollatorx():
+    def __call__(self, features: List[InputDataClass]) -> Dict[str, torch.Tensor]:
         first = features[0]
 
         # Special handling for labels.

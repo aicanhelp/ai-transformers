@@ -1,11 +1,9 @@
-import json
-from collections import Callable
-
 from tqdm import tqdm
 from transformers import PreTrainedModel
 
 from .trainer_base import *
 from .trainer_dataloaders import TaskTrainerDataLoaders
+from .trainer_metrics import TaskTrainerMetrics
 
 
 @configclass
@@ -63,7 +61,7 @@ class TaskTrainerPredictor():
 
             for k, v in inputs.items():
                 if k != 'guid':
-                    inputs[k] = v.to(self._env.args.device)
+                    inputs[k] = v.to(self._env.device)
                 else:
                     guids.extend(inputs.pop('guid'))
 
@@ -97,7 +95,7 @@ class TaskTrainerEvaluator():
     def __init__(self, trainer_env: TrainerEnv,
                  config: TrainerEvaluatorConfig,
                  predictor: TaskTrainerPredictor,
-                 compute_metrics: Optional[Callable[[TaskEvalPrediction], Dict]] = None):
+                 compute_metrics: TaskTrainerMetrics = None):
         self._env = trainer_env
         self.config = config
         self._predictor = predictor
@@ -105,24 +103,5 @@ class TaskTrainerEvaluator():
 
     def evaluate(self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None):
         p = self._predictor.prediction_loop(dataloader, description, prediction_loss_only)
-
-        if self._compute_metrics is not None and p.predictions is not None and p.label_ids is not None:
-            metrics = self._compute_metrics(TaskEvalPrediction(predictions=p.predictions, label_ids=p.label_ids))
-        else:
-            metrics = {}
-        if len(p.eval_losses) > 0:
-            metrics["eval_loss"] = np.mean(p.eval_losses)
-
-        # Prefix all keys with eval_
-        for key in list(metrics.keys()):
-            if not key.startswith("eval_"):
-                metrics[f"eval_{key}"] = metrics.pop(key)
-        p.metrics = metrics
-
-        output = json.dumps({**metrics})
-        print(output)
-
-        if self._env.args.tpu_metrics_debug:
-            self._env.tpu_metrics()
-
+        if self._compute_metrics: self._compute_metrics.eval_metrics(p)
         return p

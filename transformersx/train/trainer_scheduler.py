@@ -14,7 +14,7 @@ class TrainerSchedulerConfig:
     global_step = 0
 
 
-@dataclass()
+@configclass()
 class TaskTrainedScheduler():
     epoch = 0
     global_step = 0

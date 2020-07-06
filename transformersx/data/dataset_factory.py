@@ -16,7 +16,7 @@ class TaskDatasetFactory:
         self._processor = processor
         self._converter = dataConverter
 
-    def _create_dataset(self, evaluate=False, limit_length: Optional[int] = None, local_rank=-1) -> Dataset:
+    def _create_dataset(self, evaluate=False, limit_length: Optional[int] = None, local_rank=-1) -> TaskDataset:
         with torch_distributed_zero_first(local_rank):
             dataset = self._data_store.load_dataset(limit_length, evaluate)
             if not dataset:
@@ -27,10 +27,10 @@ class TaskDatasetFactory:
                     self._data_store.save_dataset(dataset, evaluate)
             return dataset
 
-    def create_train_dataset(self, limit_length: Optional[int] = None, local_rank=-1) -> Dataset:
+    def create_train_dataset(self, limit_length: Optional[int] = None, local_rank=-1) -> TaskDataset:
         return self._create_dataset(False, limit_length, local_rank)
 
-    def create_eval_dataset(self, limit_length: Optional[int] = None, local_rank=-1) -> Dataset:
+    def create_eval_dataset(self, limit_length: Optional[int] = None, local_rank=-1) -> TaskDataset:
         return self._create_dataset(True, limit_length, local_rank)
 
     def __generate_features(self, limit_length: Optional[int] = None, evaluate=False):

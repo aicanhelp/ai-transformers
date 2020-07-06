@@ -32,7 +32,7 @@ class TrainerConfig:
     dl_config: TrainerDataloadersConfig = field(TrainerDataloadersConfig())
     eval_config: TrainerEvaluatorConfig = field(TrainerEvaluatorConfig())
     opt_config: TrainerOptimizersConfig = field(TrainerOptimizersConfig())
-    ckp_config: TrainerCheckpointConfig = field(TrainerCheckpointConfig())
+    chk_config: TrainerCheckpointConfig = field(TrainerCheckpointConfig())
     log_config: TrainerLoggerConfig = field(TrainerLoggerConfig())
     sch_config: TrainerSchedulerConfig = field(TrainerSchedulerConfig())
     training_config: TrainerTrainingConfig = field(TrainerTrainingConfig())
@@ -66,7 +66,12 @@ class TrainerConfig:
         )
 
 
-TaskTrainingConfig = merge_fields(object, TrainerEvnConfig,
+@configclass()
+class ConfigClass:
+    pass
+
+
+TaskTrainingConfig = merge_fields(ConfigClass, TrainerEvnConfig,
                                   TrainerOptimizersConfig,
                                   TrainerLoggerConfig, TrainerSchedulerConfig,
                                   TrainerDataloadersConfig,
