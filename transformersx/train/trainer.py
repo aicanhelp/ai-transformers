@@ -37,28 +37,22 @@ class TaskTrainerBuildContext:
 
 class TaskTrainerContextBase():
     def __init__(self, train_env: TrainerEnv, config: TrainerConfig, build_context: TaskTrainerBuildContext,
-                 for_train=False):
+                 model_path=None, for_train=False):
         self.env = train_env
         self.config = config
-        self.trainer_checkpointer = TaskTrainerCheckpointer(self.task_name, self.env, self.config.ckp_config)
-        model_path, self.latest_checkpoint, self.task_model, self.model = self.__activate_context_and_build_model(
-            build_context, for_train)
+        self.task_model, self.model = self.__activate_context_and_build_model(build_context, model_path, for_train)
         self.task_context, self.dataset_factory = build_context.task_context(), build_context.task_dataset_factory()
         self.task_name = self.task_context.task_name
-
         self.data_loaders = TaskTrainerDataLoaders(self.env, self.config.dl_config, self.dataset_factory,
                                                    self.task_context.data_collator)
         self.predictor = TaskTrainerPredictor(self.env, self.model, self.data_loaders)
 
-    def __activate_context_and_build_model(self, build_context: TaskTrainerBuildContext, for_train):
-        latest_checkpoint = self.trainer_checkpointer.find_latest_checkpoint() if for_train else None
-        model_path = latest_checkpoint.checkpoint_dir if latest_checkpoint else None
-        model_path = None if not model_path and for_train else ""
+    def __activate_context_and_build_model(self, build_context: TaskTrainerBuildContext, model_path, for_train):
         build_context.activate_context(model_path, for_train)
         task_model = build_context.task_model()
         self.__init_model_env(task_model.model)
 
-        return model_path, latest_checkpoint, task_model, task_model.model
+        return task_model, task_model.model
 
     def __init_model_env(self, model):
         model.to(self.env.device)
@@ -73,8 +67,8 @@ class TaskTrainerContextBase():
 class TaskTrainerContext_Eval(TaskTrainerContextBase):
     def __init__(self, train_env: TrainerEnv,
                  config: TrainerConfig,
-                 build_context: TaskTrainerBuildContext):
-        super().__init__(train_env, config, build_context, False)
+                 build_context: TaskTrainerBuildContext, model_path=None):
+        super().__init__(train_env, config, build_context, model_path, False)
         self.evaluator = TaskTrainerEvaluator(self.env, self.config.eval_config, self.predictor,
                                               self.task_context.compute_metrics)
 
@@ -82,12 +76,16 @@ class TaskTrainerContext_Eval(TaskTrainerContextBase):
 class TaskTrainerContext_Train(TaskTrainerContextBase):
     def __init__(self, train_env: TrainerEnv,
                  config: TrainerConfig,
-                 build_context: TaskTrainerBuildContext):
-        super().__init__(train_env, config, build_context, True)
+                 build_context: TaskTrainerBuildContext, model_path=None):
+        self.trainer_checkpointer = TaskTrainerCheckpointer(self.task_name, self.env, self.config.ckp_config)
+        latest_checkpoint = self.trainer_checkpointer.find_latest_checkpoint()
+        model_path = latest_checkpoint.checkpoint_dir if latest_checkpoint else model_path
+        super().__init__(train_env, config, build_context, model_path, True)
+
         self.evaluator = TaskTrainerEvaluator(self.env, self.config.eval_config, self.predictor,
                                               self.task_context.compute_metrics)
 
-        self.optimizers, self.train_counter = self.__create_optimizers_counter(self.model, self.latest_checkpoint)
+        self.optimizers, self.train_counter = self.__create_optimizers_counter(self.model, latest_checkpoint)
         self.trainer_logger = TaskTrainerLogger(self.env, self.model)
 
     def __create_optimizers_counter(self, task_model, latest_checkpoint):
@@ -205,15 +203,15 @@ class TaskTrainer():
         self.config = TrainerConfig.from_env(trainer_env)
         self._build_context = build_context
 
-    def train(self):
-        context = TaskTrainerContext_Train(self._env, self.config, self._build_context)
+    def train(self, model_path=None):
+        context = TaskTrainerContext_Train(self._env, self.config, self._build_context, model_path)
         context.trainer_logger.log_pre_train(context.data_loaders.get_train_dataloader(), context.train_counter)
         return TaskTrainLoop(context).execute()
 
-    def evaluate(self):
-        context = TaskTrainerContext_Eval(self._env, self.config, self._build_context)
+    def evaluate(self, model_path=None):
+        context = TaskTrainerContext_Eval(self._env, self.config, self._build_context, model_path)
         return context.evaluator.evaluate(context.data_loaders.get_eval_dataloader(), description="Evaluate")
 
-    def predictor(self) -> TaskTrainerPredictor:
-        predict_context = TaskTrainerContextBase(self._env, self.config, self._build_context, False)
+    def predictor(self, model_path=None) -> TaskTrainerPredictor:
+        predict_context = TaskTrainerContextBase(self._env, self.config, self._build_context, model_path, False)
         return predict_context.predictor
