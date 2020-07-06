@@ -106,14 +106,11 @@ class TaskModel:
             num_labels=kwargs['num_labels']
         )
         tokenizer = self.tokenizer.from_pretrained(model_path)
-        unit_test = kwargs['unit_test']
-        if not unit_test:
-            model = self.model_class.from_pretrained(
-                model_path,
-                config=config
-            )
-        else:
-            model = None
+        model = self.model_class.from_pretrained(
+            model_path,
+            config=config
+        )
+
         return config, tokenizer, model
 
     def load(self, **kwargs):

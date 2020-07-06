@@ -7,6 +7,12 @@ class TrainerSchedulerConfig:
         -1, "If > 0: set total number of training steps to perform. Override num_train_epochs.")
     num_train_epochs: float = field(3.0, "Total number of training epochs to perform.")
 
+    # not field
+    train_data_len = 0
+    gradient_accumulation_steps = 0
+    train_batch_size = 0
+    global_step = 0
+
 
 @dataclass()
 class TaskTrainedScheduler():
@@ -22,14 +28,10 @@ class TaskTrainedScheduler():
     num_train_epochs = 0
     total_train_batch_size = 0
 
-    def __init__(self, trainer_env: TrainerEnv, train_data_len, gradient_accumulation_steps,
-                 train_batch_size, global_step=0):
+    def __init__(self, trainer_env: TrainerEnv, config: TrainerSchedulerConfig):
         self._env = trainer_env
-        self.config: TrainerSchedulerConfig = trainer_env.get_config(TrainerSchedulerConfig)
-        self.global_step = global_step
-        self._train_data_len = train_data_len
-        self._train_batch_size = train_batch_size
-        self._gradient_accumulation_steps = gradient_accumulation_steps
+        self.config = config
+        self.global_step = config.global_step
 
         self._cal_epochs()
         self._cal_steps()
@@ -38,19 +40,19 @@ class TaskTrainedScheduler():
         if self.config.max_steps > 0:
             self.t_total = self.config.max_steps
             self.num_train_epochs = (
-                    self.config.max_steps // (self._train_data_len // self._gradient_accumulation_steps) + 1
+                    self.config.max_steps // (self.config.train_data_len // self.config.gradient_accumulation_steps) + 1
             )
         else:
             self.t_total = int(
-                self._train_data_len // self._gradient_accumulation_steps * self.config.num_train_epochs)
+                self.config.train_data_len // self.config.gradient_accumulation_steps * self.config.num_train_epochs)
             self.num_train_epochs = self.config.num_train_epochs
 
         if self._env.is_tpu_available():
-            self.total_train_batch_size = self._train_batch_size * self._env.xrt_world_size()
+            self.total_train_batch_size = self.config.train_batch_size * self._env.xrt_world_size()
         else:
             self.total_train_batch_size = (
-                    self._train_batch_size
-                    * self._gradient_accumulation_steps
+                    self.config.train_batch_size
+                    * self.config.gradient_accumulation_steps
                     * (torch.distributed.get_world_size() if self._env.args.local_rank != -1 else 1)
             )
 
@@ -59,9 +61,9 @@ class TaskTrainedScheduler():
             return
         try:
             self.epochs_trained = self.global_step // (
-                    self._train_data_len // self._gradient_accumulation_steps)
+                    self.config.train_data_len // self.config.gradient_accumulation_steps)
             self.steps_trained_in_current_epoch = self.global_step % (
-                    self._train_data_len // self._gradient_accumulation_steps
+                    self.config.train_data_len // self.config.gradient_accumulation_steps
             )
 
             log.info("  Continuing training from checkpoint, will skip to saved global_step")

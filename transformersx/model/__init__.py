@@ -1,2 +1,2 @@
 from .model_factory import TaskModel, TaskModelFactory
-from .model_args import TaskModelArguments
+from .model_config import TaskModelConfig

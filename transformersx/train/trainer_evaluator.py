@@ -95,9 +95,11 @@ class TaskTrainerPredictor():
 
 class TaskTrainerEvaluator():
     def __init__(self, trainer_env: TrainerEnv,
+                 config: TrainerEvaluatorConfig,
                  predictor: TaskTrainerPredictor,
                  compute_metrics: Optional[Callable[[TaskEvalPrediction], Dict]] = None):
         self._env = trainer_env
+        self.config = config
         self._predictor = predictor
         self._compute_metrics = compute_metrics
 

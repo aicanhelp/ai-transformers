@@ -7,7 +7,7 @@ from transformers import PreTrainedTokenizer
 from transformers.file_utils import WEIGHTS_NAME, CONFIG_NAME, url_to_filename, hf_bucket_url
 from transformers.tokenization_utils_base import ADDED_TOKENS_FILE, TOKENIZER_CONFIG_FILE, SPECIAL_TOKENS_MAP_FILE
 
-from ..transformersx_base import log,join_path
+from ..transformersx_base import log, join_path
 
 try:
     import turbo_transformers
@@ -97,7 +97,7 @@ class TaskModel:
     config: type = None
     model_path: str = None
     model_class: type = None
-    tokenizer: type = None
+    tokenizer: PreTrainedTokenizer = None
     main_parameter: str = None
 
     def load(self, **kwargs):

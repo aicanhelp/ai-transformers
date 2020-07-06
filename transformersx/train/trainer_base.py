@@ -46,12 +46,12 @@ class TrainerEvnConfig():
 
 
 class TrainerEnv:
-    def __init__(self, total_config):
-        self.total_config = total_config
+    def __init__(self, args):
+        self.args = args
         self.config: TrainerEvnConfig = self.get_config(TrainerEvnConfig)
 
     def get_config(self, config_class):
-        return export(self.total_config, config_class)
+        return export(self.args, config_class)
 
     def is_tpu_available(self):
         return _has_tpu

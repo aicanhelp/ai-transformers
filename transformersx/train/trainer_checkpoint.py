@@ -65,7 +65,7 @@ class TaskTrainerCheckpoint():
         log.info("Saving model checkpoint to %s", output_dir)
 
         if self._env.is_master_ordinal():
-            torch.save(self._env.total_config, os.path.join(output_dir, "training_args.bin"))
+            torch.save(self._env.args, os.path.join(output_dir, "training_args.bin"))
 
         # Save a trained model and configuration using `save_pretrained()`.
         # They can then be reloaded using `from_pretrained()`
@@ -83,13 +83,13 @@ class TaskTrainerCheckpoint():
         model.save_pretrained(output_dir)
 
         # Good practice: save your training arguments together with the trained model
-        torch.save(self._env.total_config, os.path.join(output_dir, "training_args.bin"))
+        torch.save(self._env.args, os.path.join(output_dir, "training_args.bin"))
 
 
 class TaskTrainerCheckpointer():
-    def __init__(self, task_name, trainer_env: TrainerEnv):
+    def __init__(self, task_name, trainer_env: TrainerEnv, config: TrainerCheckpointConfig):
         self._task_name = task_name
-        self.config: TrainerCheckpointConfig = trainer_env.get_config(TrainerCheckpointConfig)
+        self.config = config
         self._env = trainer_env
         self._model, self._optimizers = None, None
 

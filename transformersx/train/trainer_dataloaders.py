@@ -1,4 +1,4 @@
-from transformersx import TaskDatasetFactory
+from ..data import TaskDatasetFactory
 
 from .trainer_base import *
 
@@ -11,10 +11,11 @@ class TrainerDataloadersConfig():
 
 class TaskTrainerDataLoaders():
     def __init__(self, trainer_env: TrainerEnv,
+                 config: TrainerDataloadersConfig,
                  dataset_factory: TaskDatasetFactory,
                  data_collator: DataCollator):
         self._env = trainer_env
-        self.config: TrainerDataloadersConfig = trainer_env.get_config(TrainerDataloadersConfig)
+        self.config = config
         self._data_collator = data_collator
         self._dataset_factory = dataset_factory
         self._local_rank = trainer_env.config.local_rank

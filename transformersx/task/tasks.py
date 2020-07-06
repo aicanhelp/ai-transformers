@@ -9,30 +9,26 @@ class DefaultTaskTrainerBuildContext(TaskTrainerBuildContext):
     def __init__(self, task_config: TaskConfig, task_context: TaskContext):
         self.config = task_config
         self._task_context = task_context
-        self._task_model_factory, self._task_data_converter, self._task_dataset_factory = None, None, None
+        self._task_model, self._task_data_converter, self._task_dataset_factory = None, None, None
         self.config.model_config.num_labels = len(self._task_context.data_processor().get_labels())
-        self._model_path = None
 
     def task_context(self) -> TaskContext:
         return self._task_context
 
-    def task_model_factory(self) -> TaskModelFactory:
-        if not self._task_model_factory:
-            self._task_model_factory = TaskModelFactory(self._task_context.task_name,
-                                                        self.config.model_config,
-                                                        self._task_context.model_class())
-        return self._task_model_factory
+    def task_model(self) -> TaskModelFactory:
+        assert self._task_model, 'call activate_context to activate context firstly'
+        return self._task_model
 
     def __get_data_store_id(self):
         return "cached_{}_{}_{}".format(
-            self.task_model_factory().get_task_model(self._model_path, for_train=True).tokenizer.__class__.__name__,
+            self._task_model.tokenizer.__class__.__name__,
             str(self.config.model_config.max_len),
             self._task_context.task_name,
         )
 
     def task_dataset_factory(self) -> TaskDatasetFactory:
-        if self._task_dataset_factory:
-            return self._task_dataset_factory
+        if self._task_dataset_factory: return self._task_dataset_factory
+        assert self._task_model, 'call activate_context to activate context firstly'
         data_store_id = self.__get_data_store_id()
         task_data_store = LocalDataStore(data_store_id, self.config.data_config)
 
@@ -42,17 +38,22 @@ class DefaultTaskTrainerBuildContext(TaskTrainerBuildContext):
         return self._task_dataset_factory
 
     def task_data_converter(self) -> TaskDataConverter:
-        if not self._task_data_converter:
-            self._task_data_converter = DefaultTaskDataConverter(
-                self.task_model_factory().get_task_model(self._model_path, for_train=True).tokenizer,
-                self._task_context.data_processor().get_labels(),
-                self.config.model_config.max_len,
-                self.config.data_config.progress_bar
-            )
+        if self._task_data_converter: return self._task_data_converter
+        assert self._task_model, 'call activate_context to activate context firstly'
+        self._task_data_converter = DefaultTaskDataConverter(
+            self._task_model.tokenizer,
+            self._task_context.data_processor().get_labels(),
+            self.config.model_config.max_len,
+            self.config.data_config.progress_bar
+        )
         return self._task_data_converter
 
-    def activate_with_model(self, model_path=None):
-        self._model_path = model_path
+    def activate_context(self, model_path=None, for_train=True):
+        if self._task_model: return self._task_model
+        self._task_model = TaskModelFactory(self._task_context.task_name,
+                                            self.config.model_config,
+                                            self._task_context.model_class()).get_task_model(model_path, for_train)
+        return self._task_model
 
 
 class TransformerTask:

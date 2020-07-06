@@ -62,8 +62,7 @@ class TaskModelFactory:
                 log.info("{}:{}".format(name, param.size()))
 
     def _freeze_weights_main(self, model):
-        if model is None or not self.config.freeze_main:
-            return
+        if model is None or not self.config.freeze_main: return
 
         main_parameters = eval("self.model." + model.main_parameter)
         if hasattr(main_parameters, "parameters"):
