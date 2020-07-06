@@ -44,6 +44,9 @@ class TrainerEvnConfig():
         "For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
         "See details at https://nvidia.github.io/apex/amp.html")
 
+    per_gpu_train_batch_size: int = field(16, "Batch size per GPU/CPU for training.")
+    per_gpu_eval_batch_size: int = field(16, "Batch size per GPU/CPU for evaluation.")
+
 
 class TrainerEnv:
     def __init__(self, args=None):
@@ -125,8 +128,11 @@ class TrainerEnv:
         else:
             return len(dataloader.dataset)
 
-    def batch_size(self, per_gpu_batch_size):
-        return per_gpu_batch_size * max(1, self.n_gpu)
+    def batch_train_size(self):
+        return self.config.per_gpu_train_batch_size * max(1, self.n_gpu)
+
+    def batch_eval_size(self):
+        return self.config.per_gpu_eval_batch_size * max(1, self.n_gpu)
 
     @cached_property
     def _setup_devices(self) -> Tuple["torch.device", int]:

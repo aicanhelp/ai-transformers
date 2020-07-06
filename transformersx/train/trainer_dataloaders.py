@@ -1,10 +1,12 @@
+from transformers import DataCollator
+
 from .trainer_base import *
+from ..data import TaskDatasetFactory
 
 
 @configclass
 class TrainerDataloadersConfig():
-    per_gpu_train_batch_size: int = field(16, "Batch size per GPU/CPU for training.")
-    per_gpu_eval_batch_size: int = field(16, "Batch size per GPU/CPU for evaluation.")
+    pass
 
 
 class TaskTrainerDataLoaders():
@@ -17,8 +19,8 @@ class TaskTrainerDataLoaders():
         self._data_collator = data_collator
         self._dataset_factory = dataset_factory
         self._local_rank = trainer_env.config.local_rank
-        self.train_batch_size = trainer_env.batch_size(self.config.per_gpu_train_batch_size)
-        self.eval_batch_size = trainer_env.batch_size(self.config.per_gpu_eval_batch_size)
+        self.train_batch_size = trainer_env.batch_train_size()
+        self.eval_batch_size = trainer_env.batch_eval_size()
 
     def _create_dataloader(self, dataset, sampler, batch_size):
         data_loader = DataLoader(

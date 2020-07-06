@@ -78,7 +78,8 @@ class TaskTrainerContext_Train(TaskTrainerContextBase):
     def __init__(self, train_env: TrainerEnv,
                  config: TrainerConfig,
                  build_context: TaskTrainerBuildContext, model_path=None):
-        self.trainer_checkpointer = TaskTrainerCheckpointer(self.task_name, self.env, self.config.ckp_config)
+        self.trainer_checkpointer = TaskTrainerCheckpointer(build_context.task_context().task_name, train_env,
+                                                            config.chk_config)
         latest_checkpoint = self.trainer_checkpointer.find_latest_checkpoint()
         model_path = latest_checkpoint.checkpoint_dir if latest_checkpoint else model_path
         super().__init__(train_env, config, build_context, model_path, True)
@@ -95,9 +96,10 @@ class TaskTrainerContext_Train(TaskTrainerContextBase):
         self.config.sch_config.train_data_len = len(self.data_loaders.get_train_dataloader())
         self.config.sch_config.gradient_accumulation_steps = optimizers.config.gradient_accumulation_steps
         self.config.sch_config.train_batch_size = self.data_loaders.train_batch_size
+
         train_scheduler = TaskTrainedScheduler(self.env, self.config.sch_config)
         self.trainer_checkpointer.init_for_train(task_model, optimizers)
-        self.optimizers.set_for_start_train()
+        optimizers.set_for_start_train()
         return optimizers, train_scheduler
 
 

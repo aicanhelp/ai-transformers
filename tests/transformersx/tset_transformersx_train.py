@@ -68,3 +68,9 @@ class Test_Task_Trainer:
 
     def test_evaluate_with_model_path(self):
         TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest()).evaluate('/')
+
+    def test_train(self):
+        TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest()).train()
+
+    def test_train_with_model_path(self):
+        TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest()).train('/')

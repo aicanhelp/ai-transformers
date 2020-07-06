@@ -109,10 +109,10 @@ class TaskTrainerLogger():
         log.info("***** Running training *****")
         log.info("  Num examples = %d", self._env.num_examples(train_dataloader))
         log.info("  Num Epochs = %d", train_scheduler.num_train_epochs)
-        log.info("  Instantaneous batch size per device = %d", self._env.args.per_gpu_train_batch_size)
+        log.info("  Instantaneous batch size per device = %d", self._env.config.per_gpu_train_batch_size)
         log.info("  Total train batch size (w. parallel, distributed & accumulation) = %d",
                  train_scheduler.total_train_batch_size)
-        log.info("  Gradient Accumulation steps = %d", self._env.args.gradient_accumulation_steps)
+        log.info("  Gradient Accumulation steps = %d", train_scheduler.config.gradient_accumulation_steps)
         log.info("  Total optimization steps = %d", train_scheduler.t_total)
 
     def is_need_log_step(self, global_step):

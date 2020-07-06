@@ -53,7 +53,7 @@ class TaskTrainedScheduler():
             self.total_train_batch_size = (
                     self.config.train_batch_size
                     * self.config.gradient_accumulation_steps
-                    * (torch.distributed.get_world_size() if self._env.args.local_rank != -1 else 1)
+                    * (torch.distributed.get_world_size() if self._env.config.local_rank != -1 else 1)
             )
 
     def _cal_steps(self):
