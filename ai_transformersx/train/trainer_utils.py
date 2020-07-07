@@ -5,7 +5,6 @@ import dataclasses
 import numpy as np
 import torch
 from dataclasses import dataclass
-from transformers import DataCollator
 from transformers.data.data_collator import InputDataClass
 
 
@@ -84,8 +83,7 @@ class TrainOutput(NamedTuple):
     training_loss: float
 
 
-@dataclass
-class DefaultDataCollatorx(DataCollator):
+class DefaultDataCollatorx:
     """
     Very simple data collator that:
     - simply collates batches of dict-like objects
@@ -98,7 +96,7 @@ class DefaultDataCollatorx(DataCollator):
     See glue and ner for example of how it's useful.
     """
 
-    def collate_batch(self, features: List[InputDataClass]) -> Dict[str, torch.Tensor]:
+    def __call__(self, features: List[InputDataClass]) -> Dict[str, torch.Tensor]:
         # In this method we'll make the assumption that all `features` in the batch
         # have the same attributes.
         # So we will look at the first element as a proxy for what attributes exist
