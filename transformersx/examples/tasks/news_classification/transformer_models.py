@@ -1,7 +1,7 @@
 from ..task_base import *
 
 
-class NewsClassificationTask(TransformerTask):
+class NewsClassificationTask(DefaultTransformerTask):
     def __init__(self, config: TaskConfig):
         super().__init__(config)
 

@@ -57,6 +57,8 @@ class DefaultTaskTrainerBuildContext(TaskTrainerBuildContext):
 
 
 class TransformerTask:
+    args_class = TaskConfig
+
     def train(self): raise NotImplementedError()
 
     def eval(self): raise NotImplementedError()
@@ -65,6 +67,8 @@ class TransformerTask:
 
 
 class DefaultTransformerTask(TransformerTask):
+    args_class = TaskConfig
+
     def __init__(self, config: TaskConfig, task_context: TaskContext = None):
         self.config = config
         self._task_context = self.__create_task_context(config) if not task_context else task_context

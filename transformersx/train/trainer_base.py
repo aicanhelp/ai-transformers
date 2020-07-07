@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from pip.utils import cached_property
+from transformers.file_utils import cached_property
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.distributed import DistributedSampler
