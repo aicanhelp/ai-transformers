@@ -16,59 +16,58 @@ class TrainerOptimizersConfig:
 class TaskTrainerOptimizers():
     def __init__(self, trainer_env: TrainerEnv,
                  model: PreTrainedModel,
+                 num_train_steps: int,
                  optimizer: torch.optim.Optimizer = None,
-                 scheduler: torch.optim.lr_scheduler.LambdaLR = None):
+                 scheduler: torch.optim.lr_scheduler.LambdaLR = None
+                 ):
         self._env = trainer_env
         self.config: TrainerOptimizersConfig = trainer_env.get_config(TrainerOptimizersConfig)
-        self._origin_model = model
-        self._model = model
+        self.origin_model = model
+        self.model = model
         self._optimizer = optimizer
         self._scheduler = scheduler
+        self._num_train_steps = num_train_steps
 
-    def get_origin_model(self) -> PreTrainedModel:
-        return self._origin_model
-
-    def get_model(self) -> PreTrainedModel:
-        return self._model
-
-    def get_optimizer(self) -> torch.optim.Optimizer:
+    @property
+    def optimizer(self) -> torch.optim.Optimizer:
         if not self._optimizer:
             self._optimizer = self._create_optimizer()
         return self._optimizer
 
-    def get_scheduler(self, num_training_steps=-1) -> torch.optim.lr_scheduler.LambdaLR:
+    @property
+    def scheduler(self) -> torch.optim.lr_scheduler.LambdaLR:
         if not self._scheduler:
-            self._scheduler = self._create_scheduler(self.get_optimizer(), num_training_steps)
+            self._scheduler = self._create_scheduler(self.optimizer, self._num_train_steps)
 
         return self._scheduler
 
     def set_for_start_train(self):
         if self._env.config.fp16:
-            self._model, self._optimizer = self._env.apex_model_optimizer(self._model, self._optimizer)
+            self.model, self._optimizer = self._env.apex_model_optimizer(self.model, self.optimizer)
 
             # multi-gpu training (should be after apex fp16 initialization)
         if self._env.n_gpu > 1:
-            self._model = torch.nn.DataParallel(self._model)
+            self.model = torch.nn.DataParallel(self.model)
 
         # Distributed training (should be after apex fp16 initialization)
         if self._env.config.local_rank != -1:
-            self._model = torch.nn.parallel.DistributedDataParallel(
-                self._model,
+            self.model = torch.nn.parallel.DistributedDataParallel(
+                self.model,
                 device_ids=[self._env.config.local_rank],
                 output_device=self._env.config.local_rank,
                 find_unused_parameters=True
             )
-        self._model.zero_grad()
+        self.model.zero_grad()
 
     def _create_optimizer(self):
         no_decay = ["bias", "LayerNorm.weight"]
         optimizer_grouped_parameters = [
             {
-                "params": [p for n, p in self._model.named_parameters() if not any(nd in n for nd in no_decay)],
+                "params": [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)],
                 "weight_decay": self.config.weight_decay,
             },
             {
-                "params": [p for n, p in self._model.named_parameters() if any(nd in n for nd in no_decay)],
+                "params": [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)],
                 "weight_decay": 0.0,
             },
         ]
@@ -80,35 +79,35 @@ class TaskTrainerOptimizers():
         )
 
     def step_backward(self, inputs: Dict[str, torch.Tensor]) -> float:
-        self._model.train()
+        self.model.train()
         for k, v in inputs.items():
-            inputs[k] = v.to(self._env.args.device)
+            inputs[k] = v.to(self._env.device)
 
-        outputs = self._model.forward(**inputs)
+        outputs = self.model.forward(**inputs)
         loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
 
-        if self._env.args.n_gpu > 1:
+        if self._env.n_gpu > 1:
             loss = loss.mean()  # mean() to average on multi-gpu parallel training
         if self.config.gradient_accumulation_steps > 1:
             loss = loss / self.config.gradient_accumulation_steps
 
-        if self._env.args.fp16:
-            self._env.fp16_backward(loss, self.get_optimizer())
+        if self._env.config.fp16:
+            self._env.fp16_backward(loss, self.optimizer)
         else:
             loss.backward()
 
         return loss.item()
 
     def clip_and_step(self):
-        if self._env.args.fp16:
-            self._env.fp16_clip(self.get_optimizer(), self.config.max_grad_norm)
+        if self._env.config.fp16:
+            self._env.fp16_clip(self.optimizer, self.config.max_grad_norm)
         else:
-            torch.nn.utils.clip_grad_norm_(self._model.parameters(), self.config.max_grad_norm)
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.max_grad_norm)
 
         if self._env.is_tpu_available():
-            self._env.tpu_step(self.get_optimizer())
+            self._env.tpu_step(self.optimizer)
         else:
-            self._optimizer.step()
+            self.optimizer.step()
 
-        self._scheduler.step()
-        self._model.zero_grad()
+        self.scheduler.step()
+        self.model.zero_grad()

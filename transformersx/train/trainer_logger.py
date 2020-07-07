@@ -64,7 +64,7 @@ class TaskTrainerLogger():
         if self._tb_writer is not None:
             self._tb_writer = tb_writer
         elif is_tensorboard_available() and self._env.config.local_rank in [-1, 0]:
-            self._tb_writer = SummaryWriter(log_dir=self._env.args.logging_dir)
+            self._tb_writer = SummaryWriter(log_dir=self.config.logging_dir)
         if not is_tensorboard_available():
             log.warning(
                 "You are instantiating a Trainer but Tensorboard is not installed. You should consider installing it."
@@ -116,7 +116,7 @@ class TaskTrainerLogger():
         log.info("  Total optimization steps = %d", train_scheduler.t_total)
 
     def is_need_log_step(self, global_step):
-        return (self._env.args.logging_steps > 0 and global_step % self.config.logging_steps == 0) or (
+        return (self.config.logging_steps > 0 and global_step % self.config.logging_steps == 0) or (
                 global_step == 1 and self.config.logging_first_step)
 
     def log_train_step(self, epoch,

@@ -1,3 +1,4 @@
 from ..transformersx_base import *
-from .. import *
+from ..task import *
+from ..data import *
 from .examples_management import ExampleManagement

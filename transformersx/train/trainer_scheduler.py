@@ -9,8 +9,8 @@ class TrainerSchedulerConfig:
 
     # not field
     train_data_len = 0
-    gradient_accumulation_steps = 0
-    train_batch_size = 0
+    gradient_accumulation_steps = 1
+    train_batch_size = 16
     global_step = 0
 
 
@@ -95,3 +95,10 @@ class TaskTrainedScheduler():
 
     def task_train_output(self):
         TaskTrainOutput(self.global_step, self.tr_loss / self.global_step)
+
+    def is_step(self, step, total_steps):
+        return (step + 1) % self.config.gradient_accumulation_steps == 0 or (
+            # last step in epoch but step is always smaller than gradient_accumulation_steps
+                total_steps <= self.config.gradient_accumulation_steps
+                and (step + 1) == total_steps
+        )

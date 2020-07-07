@@ -70,7 +70,11 @@ class Test_Task_Trainer:
         TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest()).evaluate('/')
 
     def test_train(self):
+        trainer = TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest())
+        trainer.config.training_config.output_dir = 'build'
         TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest()).train()
 
     def test_train_with_model_path(self):
+        trainer = TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest())
+        trainer.config.training_config.output_dir = 'build'
         TaskTrainer(TrainerEnv(), TaskTrainerBuildContextForTest()).train('/')

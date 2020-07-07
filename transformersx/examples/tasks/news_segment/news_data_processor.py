@@ -2,6 +2,7 @@ import random
 
 from tqdm import tqdm
 
+from transformersx.utils import cut_sentences
 from ..task_base import *
 
 

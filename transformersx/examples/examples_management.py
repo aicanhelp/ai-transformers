@@ -1,5 +1,6 @@
 from ai_harness.configuration import ComplexArguments
-from .. import TransformerTask, log
+from ..task import TransformerTask
+from ..transformersx_base import log
 
 
 class ExampleManagement():
