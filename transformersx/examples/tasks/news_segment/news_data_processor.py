@@ -8,7 +8,7 @@ from ..task_base import *
 
 @configclass
 class NewsDataConfig:
-    data_dir: str = field('/app/dataset/news', 'input the data dir for processing')
+    raw_data_dir: str = field('/app/dataset/news', 'input the data dir for processing')
     save_mid: bool = field(True, 'whether cache the middle data for check')
     context_min_len: int = field(64, 'context min length')
     sentence_min_len: int = field(10, 'sentence min length')
@@ -298,7 +298,7 @@ class FileNewsExampleProcessor:
 
     def _save_middle_data(self):
         log.info("Save the middle data: ")
-        with open(join_path(self._config.data_dir, self._type + "_middle_examples.txt"), 'w') as f:
+        with open(join_path(self._config.raw_data_dir, self._type + "_middle_examples.txt"), 'w') as f:
             for example in tqdm(self._example_generator.examples, disable=(self._config.bar_size <= 0)):
                 f.write(example.text_a + '\n')
                 f.write(example.text_b + '\n')
@@ -318,7 +318,8 @@ class NewsDataProcessor(TaskDataProcessor):
             self._config = parse_tasks_args(NewsDataConfig)
 
     def _get_example(self, file_name, type):
-        return FileNewsExampleProcessor(join_path(self._config.data_dir, file_name), self._config, type).get_examples()
+        return FileNewsExampleProcessor(join_path(self._config.raw_data_dir, file_name), self._config,
+                                        type).get_examples()
 
     def get_train_examples(self):
         return self._get_example('train.txt', 'train')
