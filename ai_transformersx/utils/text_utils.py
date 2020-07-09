@@ -65,7 +65,7 @@ def make_sentences_max_length(sentences, max_len=64, min_len=10):
 
             continue
 
-        if len(s) < min_len:
+        if new_sentences and len(s) < min_len:
             new_sentences[-1] = new_sentences[-1] + s
         else:
             new_sentences.append(s)
