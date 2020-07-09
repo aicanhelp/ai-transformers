@@ -1,4 +1,3 @@
-from torch.utils.data import Dataset
 from typing import List, Optional
 
 from .data_converter import TaskDataConverter

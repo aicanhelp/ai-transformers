@@ -59,12 +59,12 @@ class TaskTrainerLogger():
         self.config: TrainerLoggerConfig = trainer_env.get_config(TrainerLoggerConfig)
         self._model = model
         self._tb_writer = tb_writer
+        self.__init_logger()
 
-    def __init_logger(self, tb_writer):
-        if self._tb_writer is not None:
-            self._tb_writer = tb_writer
-        elif is_tensorboard_available() and self._env.config.local_rank in [-1, 0]:
+    def __init_logger(self):
+        if not self._tb_writer and is_tensorboard_available() and self._env.config.local_rank in [-1, 0]:
             self._tb_writer = SummaryWriter(log_dir=self.config.logging_dir)
+
         if not is_tensorboard_available():
             log.warning(
                 "You are instantiating a Trainer but Tensorboard is not installed. You should consider installing it."
@@ -123,18 +123,14 @@ class TaskTrainerLogger():
                        global_step,
                        logs: Dict[str, float],
                        iterator: Optional[tqdm] = None) -> None:
-        if epoch is not None:
-            logs["epoch"] = epoch
+        if epoch is not None:  logs["epoch"] = epoch
         if self._tb_writer:
             for k, v in logs.items():
                 self._tb_writer.add_scalar(k, v, global_step)
-        if is_wandb_available():
-            wandb.log(logs, step=global_step)
+        if is_wandb_available(): wandb.log(logs, step=global_step)
         output = json.dumps({**logs, **{"step": global_step}})
-        if iterator is not None:
-            iterator.write(output)
-        else:
-            print(output)
+
+        (iterator.write(output) if iterator else print(output))
 
     def log_train_epoch(self):
         if self.config.tpu_metrics_debug:
@@ -142,7 +138,6 @@ class TaskTrainerLogger():
             self._env.tpu_metrics()
 
     def log_train_end(self):
-        if self._tb_writer:
-            self._tb_writer.close()
+        if self._tb_writer: self._tb_writer.close()
 
         log.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")

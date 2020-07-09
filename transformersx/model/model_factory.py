@@ -33,12 +33,12 @@ class TaskModelFactory:
         log.info("Built task model: {}".format(str(t_model)))
         return t_model
 
-    def _load_task_model(self, model_path, model_class=None) -> TaskModel:
+    def _load_task_model(self, model_base_path, model_class=None) -> TaskModel:
         t_model = self._create_task_model(model_class)
         config, tokenizer, model = t_model.load(
             num_labels=self.config.num_labels,
             unit_test=self.config.unit_test,
-            cache_dir=model_path
+            cache_dir=model_base_path
         )
         log.info(
             "Loaded task model, config: {}, tokenizer: {}, "
@@ -75,7 +75,7 @@ class TaskModelFactory:
 
         if task_model: return task_model
         if not model_path:
-            model_path = join_path(self.config.model_pretrained_dir, self.config.model_name)
+            model_path = self.config.model_pretrained_dir
 
         task_model = self._load_task_model(model_path, self._model_class)
 

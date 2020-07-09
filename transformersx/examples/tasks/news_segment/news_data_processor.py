@@ -2,6 +2,7 @@ import random
 
 from tqdm import tqdm
 
+from transformersx.data.data_processor import DefaultDataProcessor, ValuesDataProcessor
 from transformersx.utils import cut_sentences
 from ..task_base import *
 
@@ -35,15 +36,13 @@ class SentenceSplitter:
             l2 = len(sentences[i])
             if l1 > self._min_len or (l1 != l2 and not self._check_min_anyway):
                 sents.append(sentences[i - 1])
-                if i == length - 1:
-                    sents.append(sentences[i])
+                if i == length - 1: sents.append(sentences[i])
                 i = i + 1
                 l1 = l2
                 continue
             start = i - 1
             while True:
-                if i == length or sentences[i - 1][-1] != sentences[i][-1]:
-                    break
+                if i == length or sentences[i - 1][-1] != sentences[i][-1]: break
                 i = i + 1
 
             sents.append(''.join(sentences[start:i]))
@@ -64,22 +63,19 @@ class SentencesSegment():
 
     def add_new_sentence(self, sentence: str):
         sentence = sentence.strip()
-        if self._exclude_empty_line and not sentence:
-            return
+        if self._exclude_empty_line and not sentence: return
         self._sentences.append(sentence)
         self._size = self._size + 1
         return self
 
     def add_new_sentences_not_split(self, sentences):
-        if not sentences:
-            return
+        if not sentences: return
 
         self.add_new_sentences(sentences.split('\n'))
         return self
 
     def add_new_sentences(self, sentences):
-        for line in sentences:
-            self.add_new_sentence(line)
+        for line in sentences: self.add_new_sentence(line)
         return self
 
     def sentences(self, from_index, to_index):
@@ -109,13 +105,11 @@ class SentencesSegment():
 
     def char_index(self, sentence_index):
         index = 0
-        for i in range(sentence_index):
-            index = index + len(self._sentences[i])
+        for i in range(sentence_index): index = index + len(self._sentences[i])
         return index
 
     def char_indexes(self, sentences_indexes):
-        if not sentences_indexes:
-            return []
+        if not sentences_indexes:  return []
         sentences_indexes.sort()
         from_index = 0
         return_indexes = []
@@ -164,8 +158,7 @@ class NewsExampleSegment(SentencesSegment):
 
     def _make_contexts(self):
         total = self.size()
-        if total < 1:
-            return []
+        if total < 1:  return []
 
         length = len(self.first_sentence())
         start = 1
@@ -178,8 +171,7 @@ class NewsExampleSegment(SentencesSegment):
         length = length - len(self.sentence(last_start))
         for end in range(start + 1, total):
             length = length + len(self.sentence(end))
-            if length < self._context_min_len:
-                continue
+            if length < self._context_min_len: continue
 
             last_start = last_start + 1
             self.contexts.append((last_start, end + 1))
@@ -227,8 +219,7 @@ class NewsExampleGenerator():
         new_segment = NewsExampleSegment(new_segment_str,
                                          context_min_len=self._config.context_min_len,
                                          sentence_min_len=self._config.sentence_min_len)
-        if not new_segment.size():
-            return self
+        if not new_segment.size(): return self
 
         if self._last_segment is not None:
             # In order to balance the number of classification,
@@ -248,39 +239,27 @@ class NewsExampleGenerator():
         e_index = random.choice(self._last_segment.contexts[:-1])
         guid = self._guid()
         text_a, text_b = self._last_segment.example(*e_index)
-        self.examples.append(TaskInputExample(guid=guid,
-                                              text_a=text_a,
-                                              text_b=text_b,
-                                              label='0'))
+        self.examples.append(TaskInputExample(guid=guid, text_a=text_a, text_b=text_b, label='0'))
         return True
 
     def _create_positive_examples_1(self):
         for e_index in self._last_segment.contexts[:-1]:
             guid = self._guid()
             text_a, text_b = self._last_segment.example(*e_index)
-            self.examples.append(TaskInputExample(guid=guid,
-                                                  text_a=text_a,
-                                                  text_b=text_b,
-                                                  label='0'))
+            self.examples.append(TaskInputExample(guid=guid, text_a=text_a, text_b=text_b, label='0'))
 
     def _create_negative_examples_0(self, new_segment: NewsExampleSegment):
         guid = self._guid()
         text_a = self._last_segment.last_context()
         text_b = new_segment.sentence(0)
-        self.examples.append(TaskInputExample(guid=guid,
-                                              text_a=text_a,
-                                              text_b=text_b,
-                                              label='1'))
+        self.examples.append(TaskInputExample(guid=guid, text_a=text_a, text_b=text_b, label='1'))
 
     def _create_negative_examples_1(self, new_segment: NewsExampleSegment):
         guid = self._guid()
         for context in self._last_segment.contexts:
             text_a = self._last_segment.context(*context)
             for text_b in new_segment.all_sentences():
-                self.examples.append(TaskInputExample(guid=guid,
-                                                      text_a=text_a,
-                                                      text_b=text_b,
-                                                      label='1'))
+                self.examples.append(TaskInputExample(guid=guid, text_a=text_a, text_b=text_b, label='1'))
 
 
 class FileNewsExampleProcessor:
@@ -306,49 +285,28 @@ class FileNewsExampleProcessor:
 
     def get_examples(self):
         FileLineReader(self._config.bar_size).pipe(self._make_examples()).read(self._file)
-        if self._config.save_mid:
-            self._save_middle_data()
+        if self._config.save_mid: self._save_middle_data()
         return self._example_generator.examples
 
 
-class NewsDataProcessor(TaskDataProcessor):
+class NewsDataProcessor(DefaultDataProcessor):
     def __init__(self, config: NewsDataConfig):
-        self._config = config
-        if self._config is None:
-            self._config = parse_tasks_args(NewsDataConfig)
+        super().__init__(config.raw_data_dir, labels=['0', '1'])
+        self._config = parse_tasks_args(NewsDataConfig) if not config else config
 
-    def _get_example(self, file_name, type):
+    def _create_examples(self, file_name, type):
         return FileNewsExampleProcessor(join_path(self._config.raw_data_dir, file_name), self._config,
                                         type).get_examples()
 
-    def get_train_examples(self):
-        return self._get_example('train.txt', 'train')
 
-    def get_dev_examples(self):
-        return self._get_example('dev.txt', 'dev')
-
-    def get_labels(self):
-        return ['0', '1']
-
-
-class PredictDataProcessor(TaskDataProcessor):
+class PredictDataProcessor(ValuesDataProcessor):
     def __init__(self, segment: NewsExampleSegment):
-        self._segment = segment
+        super().__init__(eval_examples=self._create_example_from_article(segment), labels=['0', '1'])
 
-    def get_train_examples(self):
-        return None
-
-    def get_dev_examples(self):
-        return self._create_example_from_article()
-
-    def _create_example_from_article(self):
+    @staticmethod
+    def _create_example_from_article(segment: NewsExampleSegment):
         examples = []
-        for i, e_index in enumerate(self._segment.contexts[:-1]):
-            text_a, text_b = self._segment.example(*e_index)
-            examples.append(TaskInputExample(guid=str(i),
-                                             text_a=text_a,
-                                             text_b=text_b))
+        for i, e_index in enumerate(segment.contexts[:-1]):
+            text_a, text_b = segment.example(*e_index)
+            examples.append(TaskInputExample(guid=str(i), text_a=text_a, text_b=text_b))
         return examples
-
-    def get_labels(self):
-        return ['0', '1']

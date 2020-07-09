@@ -5,7 +5,7 @@ class NewsClassificationTask(DefaultTransformerTask):
     def __init__(self, config: TaskConfig):
         super().__init__(config)
 
-    def __create_task_context(self, config: TaskConfig) -> TaskContext:
+    def _create_task_context(self, config: TaskConfig) -> TaskContext:
         return TaskContext(
             task_name='news_cls',
             data_processor=CSVDataProcessor(

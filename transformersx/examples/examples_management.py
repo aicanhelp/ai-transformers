@@ -1,6 +1,6 @@
 from ai_harness.configuration import ComplexArguments
 from ..task import TransformerTask
-from ..transformersx_base import log
+from ..transformersx_base import log, to_json_string
 
 
 class ExampleManagement():
@@ -37,7 +37,7 @@ class ExampleManagement():
 
         task_name, arguments = ComplexArguments(argument_objs).parse(args)
         if test: arguments.model_args.unit_test = test
-        log.info("Start Example Task:{}, with arguments:{}".format(task_name, str(arguments)))
+        log.info("Start Example Task:{}, with arguments:{}".format(task_name, to_json_string(arguments)))
         task_action = arguments.action
         task_instance = self.TASKS[task_name](arguments)
 

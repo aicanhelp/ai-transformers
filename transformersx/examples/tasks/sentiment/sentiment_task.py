@@ -5,7 +5,7 @@ class SentimentTask(DefaultTransformerTask):
     def __init__(self, config: TaskConfig = None):
         super().__init__(config)
 
-    def __create_task_context(self, config: TaskConfig) -> TaskContext:
+    def _create_task_context(self, config: TaskConfig) -> TaskContext:
         return TaskContext(
             task_name='sentiment',
             data_processor=CSVDataProcessor(

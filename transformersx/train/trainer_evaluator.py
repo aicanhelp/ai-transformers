@@ -24,18 +24,15 @@ class TaskTrainerPredictor():
 
     def _prepare_model(self):
         # multi-gpu eval
+        model = self._model
         if self._env.n_gpu > 1 and not isinstance(self._model, torch.nn.DataParallel):
             model = torch.nn.DataParallel(self._model)
-        else:
-            model = self._model
+
         model.to(self._env.device)
         return model
 
     def _get_batch_size(self, dataloader: DataLoader):
-        if self._env.is_tpu_available():
-            return dataloader._loader._loader.batch_size
-        else:
-            return dataloader.batch_size
+        return dataloader._loader._loader.batch_size if self._env.is_tpu_available() else dataloader.batch_size
 
     def prediction_loop(
             self, dataloader: DataLoader, description: str, prediction_loss_only: Optional[bool] = None
@@ -59,11 +56,13 @@ class TaskTrainerPredictor():
 
             has_labels = any(inputs.get(k) is not None for k in ["labels", "lm_labels", "masked_lm_labels"])
 
+            has_guid = False
             for k, v in inputs.items():
                 if k != 'guid':
                     inputs[k] = v.to(self._env.device)
                 else:
-                    guids.extend(inputs.pop('guid'))
+                    has_guid = True
+            if has_guid: guids.extend(inputs.pop('guid'))
 
             with torch.no_grad():
                 outputs = model(**inputs)

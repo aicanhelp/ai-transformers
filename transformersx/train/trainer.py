@@ -3,6 +3,7 @@ from transformers import DataCollator
 
 from .trainer_base import *
 from .trainer_config import TrainerConfig
+from .trainer_metrics import TaskTrainerMetrics
 from .trainer_scheduler import TaskTrainedScheduler
 from .trainer_logger import TaskTrainerLogger
 from .trainer_optimizers import TaskTrainerOptimizers
@@ -11,7 +12,7 @@ from .trainer_dataloaders import TaskTrainerDataLoaders
 from .trainer_evaluator import TaskTrainerEvaluator, TaskTrainerPredictor
 from ..utils import set_seed
 from ..model import TaskModel
-from ..data import TaskDatasetFactory, TaskDataConverter
+from ..data import TaskDatasetFactory, TaskDataConverter, TaskDataProcessor
 from ..transformersx_base import field, configclass
 import os
 
@@ -20,9 +21,9 @@ import os
 class TaskContext:
     task_name: str = field('default')
     data_collator: DataCollator = field(TaskDefaultDataCollatorx())
-    compute_metrics = None
-    model_class = None
-    data_processor = None
+    compute_metrics: TaskTrainerMetrics = None
+    model_class: type = None
+    data_processor: TaskDataProcessor = None
 
 
 class TaskTrainerBuildContext:

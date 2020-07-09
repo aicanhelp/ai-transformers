@@ -1,7 +1,16 @@
+import json
+
 from ..model.model_config import TaskModelConfig
 from ..data.data_config import TaskDataConfig
 from ..train.trainer_config import TaskTrainingConfig
 from ..transformersx_base import *
+
+
+def to_json_string(obj):
+    """
+    Serializes this instance to a JSON string.
+    """
+    return json.dumps(configclasses.asdict(obj), indent=2)
 
 
 @configclass
@@ -11,6 +20,12 @@ class TaskConfig:
     model_config: TaskModelConfig = TaskModelConfig()
     data_config: TaskDataConfig = TaskDataConfig()
     training_config: TaskTrainingConfig = TaskTrainingConfig()
+
+    def to_json_string(self):
+        """
+        Serializes this instance to a JSON string.
+        """
+        return json.dumps(configclasses.asdict(self), indent=2)
 
 
 def parse_tasks_args(argsObjOrClass=None):

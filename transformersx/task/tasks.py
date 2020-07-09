@@ -10,7 +10,7 @@ class DefaultTaskTrainerBuildContext(TaskTrainerBuildContext):
         self.config = task_config
         self._task_context = task_context
         self._task_model, self._task_data_converter, self._task_dataset_factory = None, None, None
-        self.config.model_config.num_labels = len(self._task_context.data_processor().get_labels())
+        self.config.model_config.num_labels = len(self._task_context.data_processor.get_labels())
 
     def task_context(self) -> TaskContext:
         return self._task_context
@@ -33,7 +33,7 @@ class DefaultTaskTrainerBuildContext(TaskTrainerBuildContext):
         task_data_store = LocalDataStore(data_store_id, self.config.data_config)
 
         self._task_dataset_factory = TaskDatasetFactory(task_data_store,
-                                                        self._task_context.data_processor(),
+                                                        self._task_context.data_processor,
                                                         self.task_data_converter())
         return self._task_dataset_factory
 
@@ -42,7 +42,7 @@ class DefaultTaskTrainerBuildContext(TaskTrainerBuildContext):
         assert self._task_model, 'call activate_context to activate context firstly'
         self._task_data_converter = DefaultTaskDataConverter(
             self._task_model.tokenizer,
-            self._task_context.data_processor().get_labels(),
+            self._task_context.data_processor.get_labels(),
             self.config.model_config.max_len,
             self.config.data_config.progress_bar
         )
@@ -52,7 +52,7 @@ class DefaultTaskTrainerBuildContext(TaskTrainerBuildContext):
         if self._task_model: return self._task_model
         self._task_model = TaskModelFactory(self._task_context.task_name,
                                             self.config.model_config,
-                                            self._task_context.model_class()).get_task_model(model_path, for_train)
+                                            self._task_context.model_class).get_task_model(model_path, for_train)
         return self._task_model
 
 
@@ -71,11 +71,11 @@ class DefaultTransformerTask(TransformerTask):
 
     def __init__(self, config: TaskConfig, task_context: TaskContext = None):
         self.config = config
-        self._task_context = self.__create_task_context(config) if not task_context else task_context
+        self._task_context = self._create_task_context(config) if not task_context else task_context
         self._build_context = DefaultTaskTrainerBuildContext(self.config, self._task_context)
         self._task_trainer, self._task_predictor = None, None
 
-    def __create_task_context(self, config: TaskConfig) -> TaskContext:
+    def _create_task_context(self, config: TaskConfig) -> TaskContext:
         raise NotImplementedError('this method must be implemented for None task_context argument in Construction')
 
     def _get_task_trainer(self) -> TaskTrainer:

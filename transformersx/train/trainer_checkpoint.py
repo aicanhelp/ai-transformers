@@ -141,8 +141,7 @@ class TaskTrainerCheckpointer():
 
         # Check if we should delete older checkpoint(s)
         checkpoints_sorted = self._sorted_checkpoints()
-        if len(checkpoints_sorted) <= self.config.save_total_limit:
-            return
+        if len(checkpoints_sorted) <= self.config.save_total_limit: return
 
         number_of_checkpoints_to_delete = max(0, len(checkpoints_sorted) - self.config.save_total_limit)
         checkpoints_to_be_deleted = checkpoints_sorted[:number_of_checkpoints_to_delete]
