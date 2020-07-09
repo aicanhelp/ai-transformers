@@ -291,7 +291,7 @@ class FileNewsExampleProcessor:
 
 class NewsDataProcessor(DefaultDataProcessor):
     def __init__(self, config: NewsDataConfig):
-        super().__init__(config.raw_data_dir, labels=['0', '1'])
+        super().__init__(config.raw_data_dir, labels=['0', '1'], train_file='train.txt', eval_file='dev.txt')
         self._config = parse_tasks_args(NewsDataConfig) if not config else config
 
     def _create_examples(self, file_name, type):
