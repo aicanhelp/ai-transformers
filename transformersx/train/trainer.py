@@ -14,6 +14,7 @@ from ..utils import set_seed
 from ..model import TaskModel
 from ..data import TaskDatasetFactory, TaskDataConverter, TaskDataProcessor
 from ..transformersx_base import field, configclass
+import time
 import os
 
 
@@ -190,10 +191,12 @@ class TaskTrainLoop():
         return self._train_counter.task_train_output()
 
     def __save_trained_model(self):
-        os.makedirs(self.training_config.output_dir, exist_ok=True)
-        self.task_context.model.save_pretrained(self.training_config.output_dir)
+        t = str(time.time())
+        output_dir = join_path(self.training_config.output_dir, self.task_context.task_name, '-', t)
+        os.makedirs(output_dir, exist_ok=True)
+        self.task_context.model.save_pretrained(output_dir)
         if self._env.is_world_master():
-            self.task_context.task_model.tokenizer.save_pretrained(self.training_config.output_dir)
+            self.task_context.task_model.tokenizer.save_pretrained(output_dir)
 
 
 class TaskTrainer():
