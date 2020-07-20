@@ -1,6 +1,9 @@
 from transformers.tokenization_bert import BertTokenizer
 
 from transformersx.data import *
+from transformersx.data.data_models import FeaturesSerializer
+import torch
+import time
 
 
 def create_test_examples(type, count):
@@ -32,3 +35,29 @@ class Test_data_factory:
         assert data_factory.create_eval_dataset()
 
 
+class Test_Serialization:
+    def test_feature_serialization(self):
+        features_list = [TaskInputFeatures(input_ids=[1] * (100 + i), token_type_ids=[0] * (100 + i)) for i in
+                         range(5)]
+        with FeaturesSerializer('../../build/test_features.data') as s:
+            s.write_features_list(features_list)
+
+        with FeaturesSerializer('../../build/test_features.data') as s:
+            for i, f in enumerate(s.read_features_iter()):
+                assert f == features_list[i]
+
+    def __make_features(self, count):
+        return [TaskInputFeatures(input_ids=[1] * 100, token_type_ids=[0] * 100) for i in range(count)]
+
+    def test_benchmark_torch(self):
+        features_list = self.__make_features(100000)
+        time_start = time.time()
+        torch.save(features_list, '../../build/test_features.data')
+        print('spent time: ' + str(time.time() - time_start))
+
+    def test_benchmark_serializer(self):
+        features_list = self.__make_features(100000)
+        time_start = time.time()
+        with FeaturesSerializer('../../build/test_features.data') as s:
+            s.write_features_list(features_list)
+        print('spent time: ' + str(time.time() - time_start))

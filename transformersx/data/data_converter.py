@@ -24,10 +24,7 @@ class DefaultTaskDataConverter(TaskDataConverter):
         self._label_map = {label: i for i, label in enumerate(self._label_list)} if label_list else None
 
     def _label_from_example(self, example: TaskInputExample) -> Union[int, float]:
-        if self._label_map:
-            return self._label_map[example.label]
-        else:
-            return float(example.label)
+        return self._label_map[example.label] if self._label_map else float(example.label)
 
     def _batch_encode_plus(self, examples):
         log.info("1. Tokenizer encoding examples .... total: " + str(len(examples)))
@@ -40,11 +37,12 @@ class DefaultTaskDataConverter(TaskDataConverter):
                 [(example.text_a, example.text_b) for example in examples[step:step + 100]],
                 max_length=self._max_length,
                 pad_to_max_length=True,
+                return_token_type_ids=True,
+                return_attention_mask=True,
             )
 
             for key, value in batch_encoding.items():
-                if key not in batch_outputs:
-                    batch_outputs[key] = []
+                if key not in batch_outputs: batch_outputs[key] = []
                 batch_outputs[key].extend(value)
 
         return BatchEncoding(batch_outputs)
@@ -63,10 +61,16 @@ class DefaultTaskDataConverter(TaskDataConverter):
             features.append(feature)
         return features
 
+    def _batch_encode_plus_list(self, examples):
+        return None
+
     def convert(self, examples):
         has_label = (examples[0].label is not None)
         labels = [self._label_from_example(example) for example in examples] if has_label else None
-        batch_encoding = self._batch_encode_plus(examples)
+        if isinstance(examples[0].text_a, str):
+            batch_encoding = self._batch_encode_plus(examples)
+        else:
+            batch_encoding = self._batch_encode_plus_list(examples)
 
         features = self._convert_features(examples, labels, batch_encoding)
 
