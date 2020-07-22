@@ -5,8 +5,9 @@ from transformers.modeling_bert import BertConfig
 from transformers.tokenization_bert import BertTokenizer, BertTokenizerFast, BertWordPieceTokenizer
 
 from ..model_base import TaskModels, ModelType, ModelTaskType, model_func
+from .tokenization_bert_ext import BertTokenizerExt
 
-default_model = model_func(ModelType.bert, BertConfig, BertTokenizer, 'bert')
+default_model = model_func(ModelType.bert, BertConfig, BertTokenizerExt, 'bert')
 fast_model = model_func(ModelType.bert, BertConfig, BertTokenizerFast, 'bert')
 wpe_model = model_func(ModelType.bert, BertConfig, BertWordPieceTokenizer, 'bert')
 

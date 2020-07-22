@@ -11,3 +11,4 @@ content2=['其实热点多方关注，在今天的新闻最关注之中，我们
 def test_make_sentences_max_length():
     sentences = make_sentences_max_length(content2)
     print(sentences)
+

@@ -101,15 +101,9 @@ class TaskModel:
     main_parameter: str = None
 
     def __load(self, model_path, **kwargs):
-        config = self.config.from_pretrained(
-            model_path,
-            num_labels=kwargs['num_labels']
-        )
+        config = self.config.from_pretrained(model_path, num_labels=kwargs['num_labels'])
         tokenizer = self.tokenizer.from_pretrained(model_path)
-        model = self.model_class.from_pretrained(
-            model_path,
-            config=config
-        )
+        model = self.model_class.from_pretrained(model_path, config=config)
 
         return config, tokenizer, model
 
@@ -123,8 +117,7 @@ class TaskModel:
 
     def renew(self, model_class):
         return TaskModel(self.model_type, self.config, self.model_path,
-                         model_class, self.tokenizer,
-                         self.main_parameter)
+                         model_class, self.tokenizer, self.main_parameter)
 
 
 def model_func(model_type, config, tokenizer, main_parameter=None):
@@ -148,13 +141,11 @@ class TaskModels:
 
     def _model_class(self, model_path, model_task_type, language='cn'):
         models_l = self.MODELS[language]
-        if not models_l:
-            return None
+        if not models_l: return None
         for model in models_l:
             if model.model_path == model_path:
                 model_class = self.MODEL_CLASSES[model_task_type]
-                if not model_class:
-                    return None
+                if not model_class: return None
                 return model.renew(model_class)
 
         return None

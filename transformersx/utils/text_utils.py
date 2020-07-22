@@ -1,4 +1,7 @@
+# coding=utf-8
+
 import re
+import emoji
 
 
 def cut_sentences(para, language="cn", drop_empty_line=True, strip=True, deduplicate=False, max_len=64, min_len=10):
@@ -71,3 +74,46 @@ def make_sentences_max_length(sentences, max_len=64, min_len=10):
             new_sentences.append(s)
 
     return new_sentences
+
+
+def remove_emoji(doc):
+    doc_modified = re.sub(r' ', "", doc)
+    return re.sub(r':\w+:', "", emoji.demojize(doc_modified))
+
+
+def simple_cut_word_sentences(doc):
+    doc_modified = re.sub(r'。', "。 ", doc)
+    doc_modified = re.sub(r'！', "！ ", doc_modified)
+    doc_modified = re.sub(r'？', "？ ", doc_modified)
+
+    doc_split = re.split(r' ', doc_modified)
+    doc_split = [s for s in doc_split if len(s) >= 2]
+
+    if len(doc_split) < 2:
+        doc_modified = re.sub(r'，', "， ", doc_modified)
+        doc_modified = re.sub(r'；', "； ", doc_modified)
+        doc_split = re.split(r' ', doc_modified)
+        doc_split = [s for s in doc_split if len(s) >= 2]
+
+    doc_split = [list(s) for s in doc_split]
+
+    return doc_split
+
+
+def get_ngrams(n, text):
+    ngram_set = set()
+    text_length = len(text)
+    max_index_ngram_start = text_length - n
+    for i in range(max_index_ngram_start + 1):
+        ngram_set.add(tuple(text[i:i + n]))
+    return ngram_set
+
+
+def get_word_ngrams(n, sentences):
+    assert len(sentences) > 0 and n > 0
+    words = sum(sentences, [])
+    return get_ngrams(n, words)
+
+
+def rouge_clean(s):
+    return re.sub(r'[^a-zA-Z0-9 ]', '', s)

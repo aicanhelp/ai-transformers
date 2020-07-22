@@ -1,7 +1,8 @@
 ## Setup py requirements
-ai-harness>=0.4.30
+ai-harness>=0.4.32
 python-box>=4.2.2
 boltons>=20.0.0
 transformers>=3.0.0
 pytorch_lightning>=0.7.6
 fast-bert>=1.7.1
+emoji>=0.5.4
