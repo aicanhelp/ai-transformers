@@ -82,6 +82,11 @@ def remove_emoji(doc):
 
 
 def simple_cut_word_sentences(doc):
+    '''
+    cut a doc into several sentences, and each sentence is split into words
+    :param doc:
+    :return: List[List[char]]
+    '''
     doc_modified = re.sub(r'。', "。 ", doc)
     doc_modified = re.sub(r'！', "！ ", doc_modified)
     doc_modified = re.sub(r'？', "？ ", doc_modified)
@@ -101,6 +106,12 @@ def simple_cut_word_sentences(doc):
 
 
 def get_ngrams(n, text):
+    '''
+
+    :param n:
+    :param text: List[char]
+    :return:
+    '''
     ngram_set = set()
     text_length = len(text)
     max_index_ngram_start = text_length - n
@@ -110,6 +121,12 @@ def get_ngrams(n, text):
 
 
 def get_word_ngrams(n, sentences):
+    '''
+
+    :param n:
+    :param sentences: List[List[char]]
+    :return:
+    '''
     assert len(sentences) > 0 and n > 0
     words = sum(sentences, [])
     return get_ngrams(n, words)
